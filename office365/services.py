@@ -6,11 +6,19 @@ from office365.exceptions import UnknownFilterException
 from office365.filters import AllMessagesFilter
 
 
-class OutlookService(object):
-    url = 'https://graph.microsoft.com/v1.0/me'
+class BaseService(object):
 
-    def __init__(self, client):
+    def __init__(self, client, client_id, client_secret, redirect_uri, access_token, refresh_token):
         self.client = client
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.redirect_uri = redirect_uri
+        self.access_token = access_token
+        self.refresh_token = refresh_token
+
+
+class OutlookService(BaseService):
+    url = 'https://graph.microsoft.com/v1.0/me'
 
     def get_complete_url(self, path='', filter_backend=None):
         """
@@ -59,16 +67,8 @@ class OutlookService(object):
         return response.json()
 
 
-class TokenService(object):
+class TokenService(BaseService):
     refresh_url = 'https://login.microsoftonline.com/common/oauth2/token'
-
-    def __init__(self, client, client_id, client_secret, redirect_uri, access_token, refresh_token):
-        self.client = client
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.redirect_uri = redirect_uri
-        self.access_token = access_token
-        self.refresh_token = refresh_token
 
     def _get_refresh_data(self):
         """
