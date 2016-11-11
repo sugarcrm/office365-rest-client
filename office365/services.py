@@ -8,13 +8,8 @@ from office365.filters import AllMessagesFilter
 
 class BaseService(object):
 
-    def __init__(self, client, client_id, client_secret, redirect_uri, access_token, refresh_token):
+    def __init__(self, client):
         self.client = client
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.redirect_uri = redirect_uri
-        self.access_token = access_token
-        self.refresh_token = refresh_token
 
 
 class OutlookService(BaseService):
@@ -76,11 +71,11 @@ class TokenService(BaseService):
         """
         return {
             'grant_type': 'refresh_token',
-            'redirect_uri': self.redirect_uri,
-            'client_id': self.client_id,
-            'client_secret': self.client_secret,
+            'redirect_uri': self.client.redirect_uri,
+            'client_id': self.client.client_id,
+            'client_secret': self.client.client_secret,
             'resource': 'http://graph.microsoft.com/',
-            'refresh_token': self.refresh_token
+            'refresh_token': self.client.refresh_token
         }
 
     def refresh(self, retries=2):
@@ -91,9 +86,9 @@ class TokenService(BaseService):
             response = requests.post(self.refresh_url, data=self._get_refresh_data())
             if response.status_code == 200:
                 resp_json = response.json()
-                self.access_token = resp_json['access_token']
-                self.refresh_token = resp_json['refresh_token']
-                self.expires_on = datetime.fromtimestamp(resp_json['expires_on'])
+                self.client.access_token = resp_json['access_token']
+                self.client.refresh_token = resp_json['refresh_token']
+                self.client.expires_on = datetime.fromtimestamp(resp_json['expires_on'])
                 return True
             retries -= 1
         return False

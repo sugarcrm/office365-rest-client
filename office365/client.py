@@ -7,5 +7,10 @@ class Office365Client(object):
     api_version = 'v1.0'
 
     def __init__(self, client_id, client_secret, redirect_uri, access_token, refresh_token):
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.redirect_uri = redirect_uri
+        self.access_token = access_token
+        self.refresh_token = refresh_token
         self.outlook = OutlookService(self)
         self.token = TokenService(self)
