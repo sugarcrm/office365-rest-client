@@ -47,13 +47,13 @@ class OutlookService(BaseService):
         """
         headers = {
             'Prefer': 'outlook.allow-unsafe-html',
-            'Authorization': 'Bearer {0}'.format(self.client.token.access_token)
+            'Authorization': 'Bearer {0}'.format(self.client.access_token)
         }
         response = requests.get(url, headers=headers)
         if response.status_code == 401:
             is_successful = self.refresh_credentials()
             if is_successful:
-                headers['Authorization'] = 'Bearer {0}'.format(self.client.token.access_token)
+                headers['Authorization'] = 'Bearer {0}'.format(self.client.access_token)
                 response = requests.get(url, headers=headers)
                 response.raise_for_status()
             else:
