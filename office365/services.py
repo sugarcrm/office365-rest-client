@@ -51,7 +51,7 @@ class OutlookService(BaseService):
         }
         response = requests.get(url, headers=headers)
         if response.status_code == 401:
-            is_successful = self.refresh_credentials()
+            is_successful = self.token.refresh()
             if is_successful:
                 headers['Authorization'] = 'Bearer {0}'.format(self.client.access_token)
                 response = requests.get(url, headers=headers)
@@ -85,9 +85,9 @@ class TokenService(BaseService):
             response = requests.post(self.refresh_url, data=self._get_refresh_data())
             if response.status_code == 200:
                 resp_json = response.json()
-                self.client.access_token = resp_json['access_token']
-                self.client.refresh_token = resp_json['refresh_token']
-                self.client.expires_on = datetime.fromtimestamp(resp_json['expires_on'])
+                self.client.save_credentials(access_token=resp_json['access_token'],
+                                             refresh_token=resp_json['refresh_token'],
+                                             expires_on=datetime.fromtimestamp(resp_json['expires_on']))
                 return True
             retries -= 1
         return False
