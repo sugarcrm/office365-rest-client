@@ -51,7 +51,7 @@ class OutlookService(BaseService):
         }
         response = requests.get(url, headers=headers)
         if response.status_code == 401:
-            is_successful = self.token.refresh()
+            is_successful = self.refresh()
             if is_successful:
                 headers['Authorization'] = 'Bearer {0}'.format(self.client.access_token)
                 response = requests.get(url, headers=headers)
