@@ -22,8 +22,7 @@ class OutlookService(BaseService):
         if not filter_backend:
             raise UnknownFilterException()
         fmt = '{api_url}{api_path}?{query_string}'
-        return fmt.format(api_url=self.url,
-                          api_path=self.path,
+        return fmt.format(api_url=self.url, api_path=path,
                           query_string=filter_backend.get_query_string())
 
     def list_messages(self, start_date):
