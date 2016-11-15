@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from office365.backends import DefaultCredentialsBackend
-from office365.services import OutlookService
-from office365.services import TokenService
+from .backends import DefaultCredentialsBackend
+from .services import OutlookService
+from .services import TokenService
 
 
 class Office365Client(object):

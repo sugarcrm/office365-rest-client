@@ -2,8 +2,8 @@
 import requests
 from datetime import datetime
 
-from office365.exceptions import UnknownFilterException
-from office365.filters import AllMessagesFilter
+from .exceptions import UnknownFilterException
+from .filters import AllMessagesFilter
 
 
 class BaseService(object):
