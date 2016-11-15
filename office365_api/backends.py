@@ -5,5 +5,5 @@ class CredentialsBackendBase(object):
 
 class DefaultCredentialsBackend(CredentialsBackendBase):
 
-    def save(self):
+    def save(self, *args, **kwargs):
         pass
