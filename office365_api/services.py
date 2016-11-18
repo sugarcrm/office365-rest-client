@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import requests
 from datetime import datetime
+from urlparse import urlparse
+from urlparse import parse_qs
 
 from .filters import BaseFilter
 from .filters import AllMessagesFilter
@@ -37,20 +39,27 @@ class BaseAPIService(BaseService):
         assert not self.path, 'A path must be provided'
 
         result = []
+        sync_token = ''
         next_url = self.get_complete_url(path=path or self.path,
                                          filter_backend=filter_backend)
         while next_url:
             response = self.execute_request(next_url, custom_headers)
             result.extend(response['value'])
-            next_url = response.get('@odata.nextLink')
+            next_url = self.get_next_iter_link(response)
+            if not next_url and response.get('@odata.deltaLink'):
+                delta_link_qs = parse_qs(urlparse(response.get('@odata.deltaLink')).query)
+                delta_token = delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')
+                sync_token = delta_token[0] if delta_token else ''
 
-        return result
+        return result, sync_token
 
     def execute_request(self, url, headers):
         """
         Try API request; if access_token is expired, request a new one
         """
-        headers = headers.update(self.headers) if headers else self.headers
+        if headers:
+            headers.update(self.headers)
+        headers = headers or self.headers
         response = requests.get(url, headers=headers)
         if response.status_code == 401:
             is_successful = self.client.token.refresh()
@@ -72,16 +81,13 @@ class CalendarService(BaseAPIService):
         filter_backend = BaseFilter()
         return self.get_list(filter_backend, path='/Events')
 
-    def get_calendarview(self, start_date, end_date):
+    def get_calendarview(self, **kwargs):
         """
         Return all events from the Office365 Calendar with given datetime range
         """
-        custom_qs = {
-            'startDateTime': start_date,
-            'endDateTime': end_date
-        }
-        filter_backend = BaseFilter(custom_qs=custom_qs)
-        return self.get_list(filter_backend, path='/CalendarView')
+        filter_backend = kwargs.get('filter_backend') or BaseFilter(custom_qs=kwargs)
+        headers = {'Prefer': 'odata.track-changes,odata.maxpagesize=1'}
+        return self.get_list(filter_backend, path='/CalendarView', custom_headers=headers)
 
 
 class OutlookService(BaseAPIService):

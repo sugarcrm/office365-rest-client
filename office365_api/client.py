@@ -7,14 +7,16 @@ from .services import TokenService
 
 class Office365Client(object):
     api_version = 'v1.0'
-    credentials_backend = DefaultCredentialsBackend
 
-    def __init__(self, client_id, client_secret, redirect_uri, access_token, refresh_token):
+    def __init__(self, client_id, client_secret,
+                 redirect_uri, access_token, refresh_token,
+                 credentials_backend=DefaultCredentialsBackend):
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
         self.access_token = access_token
         self.refresh_token = refresh_token
+        self.credentials_backend = credentials_backend
         self.outlook = OutlookService(self)
         self.calendar = CalendarService(self)
         self.token = TokenService(self)
