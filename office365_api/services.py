@@ -45,7 +45,7 @@ class BaseAPIService(BaseService):
         while next_url:
             response = self.execute_request(next_url, custom_headers)
             result.extend(response['value'])
-            next_url = self.get_next_iter_link(response)
+            next_url = response.get('@odata.nextLink')
             if not next_url and response.get('@odata.deltaLink'):
                 delta_link_qs = parse_qs(urlparse(response.get('@odata.deltaLink')).query)
                 delta_token = delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')
@@ -126,10 +126,10 @@ class TokenService(BaseService):
             response = requests.post(self.refresh_url, data=self._get_refresh_data())
             if response.status_code == 200:
                 resp_json = response.json()
-                expires_on = datetime.fromtimestamp(float(resp_json['expires_on']))
+                expires_at = datetime.fromtimestamp(float(resp_json['expires_on']))
                 self.client.save_credentials(access_token=resp_json['access_token'],
                                              refresh_token=resp_json['refresh_token'],
-                                             expires_on=expires_on)
+                                             expires_at=expires_on)
                 return True
             retries -= 1
         return False
