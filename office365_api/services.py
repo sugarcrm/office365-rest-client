@@ -86,7 +86,8 @@ class CalendarService(BaseAPIService):
         Return all events from the Office365 Calendar with given datetime range
         """
         filter_backend = kwargs.get('filter_backend') or BaseFilter(custom_qs=kwargs)
-        headers = {'Prefer': 'odata.track-changes,odata.maxpagesize=1'}
+        headers = {'Prefer': 'odata.track-changes'}
+        # headers = {'Prefer': 'odata.track-changes,odata.maxpagesize=1'}
         return self.get_list(filter_backend, path='/CalendarView', custom_headers=headers)
 
 
@@ -129,7 +130,7 @@ class TokenService(BaseService):
                 expires_at = datetime.fromtimestamp(float(resp_json['expires_on']))
                 self.client.save_credentials(access_token=resp_json['access_token'],
                                              refresh_token=resp_json['refresh_token'],
-                                             expires_at=expires_on)
+                                             expires_at=expires_at)
                 return True
             retries -= 1
         return False
