@@ -69,6 +69,8 @@ class BaseAPIService(BaseService):
                 response.raise_for_status()
             else:
                 raise Exception('Error retrieving access token: %s' % response.content)
+        import logging
+        logging.info(response.__dict__)
         return response.json()
 
 
@@ -104,7 +106,7 @@ class OutlookService(BaseAPIService):
 
 
 class TokenService(BaseService):
-    refresh_url = 'https://login.microsoftonline.com/common/oauth2/token'
+    refresh_url = 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
 
     def _get_refresh_data(self):
         """
