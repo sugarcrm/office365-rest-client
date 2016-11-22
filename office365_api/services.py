@@ -18,7 +18,7 @@ class BaseService(object):
 
 
 class BaseAPIService(BaseService):
-    url = 'https://outlook.office.com/v2.0/me'
+    url = 'https://outlook.office.com/api/v2.0/me'
     path = None
 
     def get_complete_url(self, path='', filter_backend=None):
