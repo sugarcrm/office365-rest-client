@@ -61,6 +61,8 @@ class BaseAPIService(BaseService):
             headers.update(self.headers)
         headers = headers or self.headers
         response = requests.get(url, headers=headers)
+        import logging
+        logging.info(response.__dict__)
         if response.status_code == 401:
             is_successful = self.client.token.refresh()
             if is_successful:
@@ -69,8 +71,6 @@ class BaseAPIService(BaseService):
                 response.raise_for_status()
             else:
                 raise Exception('Error retrieving access token: %s' % response.content)
-        import logging
-        logging.info(response.__dict__)
         return response.json()
 
 
