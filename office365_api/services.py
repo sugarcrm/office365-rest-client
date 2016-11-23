@@ -40,22 +40,16 @@ class BaseAPIService(BaseService):
 
         result = []
         delta_token = ''
-        skip_token = ''
         next_link = self.get_complete_url(path=path or self.path,
                                           filter_backend=filter_backend)
         while next_link:
             response = self.execute_request(next_link, custom_headers)
             result.extend(response['value'])
-            next_link = response.get('@odata.nextLink') or response.get('@odata.deltaLink', '')
-            next_link_qs = parse_qs(urlparse(next_link).query)
-            if next_link and next_link_qs.get('$deltaToken') or next_link_qs.get('$deltatoken'):
-                delta_token_qs = next_link_qs.get('$deltaToken') or next_link_qs.get('$deltatoken')
+            next_link = response.get('@odata.nextLink')
+            delta_link_qs = parse_qs(urlparse(response.get('@odata.deltaLink', '')).query)
+            if not next_link and (delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')):
+                delta_token_qs = delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')
                 delta_token = delta_token_qs[0] if delta_token_qs else ''
-            elif next_link and next_link_qs.get('$skipToken') or next_link_qs.get('$skiptoken'):
-                skip_token_qs = next_link_qs.get('$skipToken') or next_link_qs.get('$skiptoken')
-                skip_token = skip_token_qs[0] if skip_token_qs else ''
-            if delta_token or skip_token:
-                self.client.save_tokens(delta_token, skip_token)
 
         return result, delta_token
 

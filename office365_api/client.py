@@ -26,6 +26,3 @@ class Office365Client(object):
         self.access_token = access_token
         self.refresh_token = refresh_token
         self.credentials_backend().save_credentials(self.user, access_token, refresh_token, expires_at)
-
-    def save_tokens(self, delta_token, skip_token):
-        self.credentials_backend().save_tokens(self.user, delta_token, skip_token)
