@@ -78,6 +78,8 @@ class CalendarService(BaseAPIService):
         """
         Return all events from the Office365 Calendar with given datetime range
         """
+        if kwargs.get('deltaToken'):
+            kwargs['$deltaToken'] = kwargs.pop('deltaToken')
         filter_backend = filter_backend or BaseFilter(custom_qs=kwargs)
         headers = {'Prefer': 'odata.track-changes'}
         return self.get_list(filter_backend, path='/CalendarView', custom_headers=headers)

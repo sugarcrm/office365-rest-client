@@ -5,8 +5,6 @@ class BaseFilter(object):
         self.order_by = order_by
         self.filter_by = filter_by
         self.select = select
-        if custom_qs.get('deltaToken'):
-            custom_qs['$deltaToken'] = custom_qs.pop('deltaToken')
         self.custom_qs = custom_qs
 
     def get_query_string(self):
