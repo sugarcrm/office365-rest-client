@@ -63,8 +63,6 @@ class BaseAPIService(BaseService):
         response = requests.get(url, headers=headers)
         if response.status_code == 401:
             is_successful = self.client.token.refresh()
-            import logging
-            logging.info(response.__dict__)
             if is_successful:
                 headers['Authorization'] = 'Bearer {0}'.format(self.client.access_token)
                 response = requests.get(url, headers=headers)
