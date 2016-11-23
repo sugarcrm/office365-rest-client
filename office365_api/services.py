@@ -61,8 +61,6 @@ class BaseAPIService(BaseService):
             headers.update(self.headers)
         headers = headers or self.headers
         response = requests.get(url, headers=headers)
-        import logging
-        logging.info(response.__dict__)
         if response.status_code == 401:
             is_successful = self.client.token.refresh()
             if is_successful:
@@ -76,12 +74,12 @@ class BaseAPIService(BaseService):
 
 class CalendarService(BaseAPIService):
 
-    def get_calendarview(self, filter_backend=None, page_size=5, **kwargs):
+    def get_calendarview(self, filter_backend=None, **kwargs):
         """
         Return all events from the Office365 Calendar with given datetime range
         """
         filter_backend = filter_backend or BaseFilter(custom_qs=kwargs)
-        headers = {'Prefer': 'odata.track-changes,odata.maxpagesize={}'.format(page_size)}
+        headers = {'Prefer': 'odata.track-changes'}
         return self.get_list(filter_backend, path='/CalendarView', custom_headers=headers)
 
 
