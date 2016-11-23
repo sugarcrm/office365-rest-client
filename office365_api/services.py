@@ -39,19 +39,25 @@ class BaseAPIService(BaseService):
         assert not self.path, 'A path must be provided'
 
         result = []
-        sync_token = ''
-        next_url = self.get_complete_url(path=path or self.path,
-                                         filter_backend=filter_backend)
-        while next_url:
-            response = self.execute_request(next_url, custom_headers)
+        delta_token = ''
+        skip_token = ''
+        next_link = self.get_complete_url(path=path or self.path,
+                                          filter_backend=filter_backend)
+        while next_link:
+            response = self.execute_request(next_link, custom_headers)
             result.extend(response['value'])
-            next_url = response.get('@odata.nextLink')
-            if not next_url and response.get('@odata.deltaLink'):
-                delta_link_qs = parse_qs(urlparse(response.get('@odata.deltaLink')).query)
-                delta_token = delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')
-                sync_token = delta_token[0] if delta_token else ''
+            next_link = response.get('@odata.nextLink') or response.get('@odata.deltaLink', '')
+            next_link_qs = parse_qs(urlparse(next_link).query)
+            if next_link and next_link_qs.get('$deltaToken') or next_link_qs.get('$deltatoken'):
+                delta_token_qs = next_link_qs.get('$deltaToken') or next_link_qs.get('$deltatoken')
+                delta_token = delta_token_qs[0] if delta_token_qs else ''
+            elif next_link and next_link_qs.get('$skipToken') or next_link_qs.get('$skiptoken'):
+                skip_token_qs = next_link_qs.get('$skipToken') or next_link_qs.get('$skiptoken')
+                skip_token = skip_token_qs[0] if skip_token_qs else ''
+            if delta_token or skip_token:
+                self.client.save_tokens(delta_token, skip_token)
 
-        return result, sync_token
+        return result, delta_token
 
     def execute_request(self, url, headers):
         """
@@ -76,20 +82,12 @@ class BaseAPIService(BaseService):
 
 class CalendarService(BaseAPIService):
 
-    def get_events(self):
+    def get_calendarview(self, filter_backend=None, page_size=5, **kwargs):
         """
         Return all events from the Office365 Calendar with given datetime range
         """
-        filter_backend = BaseFilter()
-        return self.get_list(filter_backend, path='/Events')
-
-    def get_calendarview(self, **kwargs):
-        """
-        Return all events from the Office365 Calendar with given datetime range
-        """
-        filter_backend = kwargs.get('filter_backend') or BaseFilter(custom_qs=kwargs)
-        headers = {'Prefer': 'odata.track-changes'}
-        # headers = {'Prefer': 'odata.track-changes,odata.maxpagesize=1'}
+        filter_backend = filter_backend or BaseFilter(custom_qs=kwargs)
+        headers = {'Prefer': 'odata.track-changes,odata.maxpagesize={}'.format(page_size)}
         return self.get_list(filter_backend, path='/CalendarView', custom_headers=headers)
 
 
@@ -106,7 +104,7 @@ class OutlookService(BaseAPIService):
 
 
 class TokenService(BaseService):
-    refresh_url = 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
+    refresh_url = 'https://login.microsoftonline.com/common/oauth2/token'
 
     def _get_refresh_data(self):
         """
@@ -117,8 +115,8 @@ class TokenService(BaseService):
             'redirect_uri': self.client.redirect_uri,
             'client_id': self.client.client_id,
             'client_secret': self.client.client_secret,
-            'resource': 'https://graph.microsoft.com/',
-            'refresh_token': self.client.refresh_token
+            'refresh_token': self.client.refresh_token,
+            'resource': 'https://outlook.office.com/'
         }
 
     def refresh(self, retries=2):
@@ -130,9 +128,9 @@ class TokenService(BaseService):
             if response.status_code == 200:
                 resp_json = response.json()
                 expires_at = datetime.fromtimestamp(float(resp_json['expires_on']))
-                self.client.save_credentials(access_token=resp_json['access_token'],
-                                             refresh_token=resp_json['refresh_token'],
-                                             expires_at=expires_at)
+                self.client.save_credentials(resp_json['access_token'],
+                                             resp_json['refresh_token'],
+                                             expires_at)
                 return True
             retries -= 1
         return False

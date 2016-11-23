@@ -10,18 +10,22 @@ class Office365Client(object):
 
     def __init__(self, client_id, client_secret,
                  redirect_uri, access_token, refresh_token,
-                 credentials_backend=DefaultCredentialsBackend):
+                 user=None, credentials_backend=DefaultCredentialsBackend):
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
         self.access_token = access_token
         self.refresh_token = refresh_token
+        self.user = user
         self.credentials_backend = credentials_backend
         self.outlook = OutlookService(self)
         self.calendar = CalendarService(self)
         self.token = TokenService(self)
 
-    def save_credentials(self, *args, **kwargs):
-        self.access_token = kwargs.get('access_token')
-        self.refresh_token = kwargs.get('refresh_token')
-        self.credentials_backend().save(self, **kwargs)
+    def save_credentials(self, access_token, refresh_token, expires_at):
+        self.access_token = access_token
+        self.refresh_token = refresh_token
+        self.credentials_backend().save_credentials(self.user, access_token, refresh_token, expires_at)
+
+    def save_tokens(self, delta_token, skip_token):
+        self.credentials_backend().save_tokens(self.user, delta_token, skip_token)
