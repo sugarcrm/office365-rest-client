@@ -124,7 +124,8 @@ class TokenService(BaseService):
                 expires_at = datetime.fromtimestamp(float(resp_json['expires_on']))
                 self.client.save_credentials(resp_json['access_token'],
                                              resp_json['refresh_token'],
-                                             expires_at)
+                                             expires_at=expires_at,
+                                             user_id=self.client.user_id)
                 return True
             retries -= 1
         return False
