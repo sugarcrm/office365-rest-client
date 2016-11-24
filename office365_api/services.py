@@ -44,8 +44,6 @@ class BaseAPIService(BaseService):
                                           filter_backend=filter_backend)
         while next_link:
             response = self.execute_request(next_link, custom_headers)
-            import logging
-            logging.info(response)
             result.extend(response['value'])
             next_link = response.get('@odata.nextLink')
             delta_link_qs = parse_qs(urlparse(response.get('@odata.deltaLink', '')).query)
