@@ -81,7 +81,7 @@ class CalendarService(BaseAPIService):
         if kwargs.get('deltaToken'):
             kwargs['$deltaToken'] = kwargs.pop('deltaToken')
         filter_backend = filter_backend or BaseFilter(custom_qs=kwargs)
-        headers = {'Prefer': 'odata.track-changes'}
+        headers = {'Prefer': 'odata.track-changes,odata.maxpagesize=100'}
         return self.get_list(filter_backend, path='/CalendarView', custom_headers=headers)
 
 
