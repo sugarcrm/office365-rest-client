@@ -11,6 +11,6 @@ setup(name='office365-rest-client',
       license='MIT',
       packages=find_packages(),
       install_requires=[
-          'requests>=2.11.1'
+          'oauth2client>=4.0.0'
       ],
       zip_safe=False)

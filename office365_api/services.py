@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-import requests
-from datetime import datetime
-from urlparse import urlparse
-from urlparse import parse_qs
+import json
+import urlparse
 
+import oauth2client.transport
+
+from .exceptions import Office365ClientError
+from .exceptions import Office365ServerError
 from .filters import BaseFilter
 from .filters import AllMessagesFilter
 
@@ -12,9 +14,6 @@ class BaseService(object):
 
     def __init__(self, client):
         self.client = client
-        self.headers = {
-            'Authorization': 'Bearer {0}'.format(self.client.access_token)
-        }
 
 
 class BaseAPIService(BaseService):
@@ -46,30 +45,33 @@ class BaseAPIService(BaseService):
             response = self.execute_request(next_link, headers=custom_headers)
             result.extend(response['value'])
             next_link = response.get('@odata.nextLink')
-            delta_link_qs = parse_qs(urlparse(response.get('@odata.deltaLink', '')).query)
+            delta_link = response.get('@odata.deltaLink', '')
+            delta_link_qs = urlparse.parse_qs(urlparse.urlparse(delta_link).query)
             if not next_link and (delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')):
                 delta_token_qs = delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')
                 delta_token = delta_token_qs[0] if delta_token_qs else ''
 
         return result, delta_token
 
-    def execute_request(self, url, headers=None):
+    def execute_request(self, url, method='get', body=None, headers=None):
         """
         Try API request; if access_token is expired, request a new one
         """
-        if headers:
-            headers.update(self.headers)
-        headers = headers or self.headers
-        response = requests.get(url, headers=headers)
-        if response.status_code == 401:
-            is_successful = self.client.token.refresh()
-            if is_successful:
-                headers['Authorization'] = 'Bearer {0}'.format(self.client.access_token)
-                response = requests.get(url, headers=headers)
-                response.raise_for_status()
+        resp, content = oauth2client.transport.request(self.client.http, url,
+                                                       method=method.upper(),
+                                                       body=body,
+                                                       headers=headers)
+        if resp.status == 200:
+            return json.loads(content)
+        else:
+            try:
+                error_data = json.loads(content)
+            except ValueError:
+                # server failed to returned valid json
+                # probably a critical error on the server happened
+                raise Office365ServerError(resp.status, content)
             else:
-                raise Exception('Error retrieving access token: %s' % response.content)
-        return response.json()
+                raise Office365ClientError(resp.status, error_data)
 
 
 class CalendarService(BaseAPIService):
@@ -95,37 +97,3 @@ class OutlookService(BaseAPIService):
         filter_backend = AllMessagesFilter(start_date, end_date)
         headers = {'Prefer': 'outlook.allow-unsafe-html'}
         return self.get_list(filter_backend, custom_headers=headers)
-
-
-class TokenService(BaseService):
-    refresh_url = 'https://login.microsoftonline.com/common/oauth2/token'
-
-    def _get_refresh_data(self):
-        """
-        Get dynamic parameters for refreshing access token
-        """
-        return {
-            'grant_type': 'refresh_token',
-            'redirect_uri': self.client.redirect_uri,
-            'client_id': self.client.client_id,
-            'client_secret': self.client.client_secret,
-            'refresh_token': self.client.refresh_token,
-            'resource': 'https://outlook.office.com/'
-        }
-
-    def refresh(self, retries=2):
-        """
-        Refresh access token with a given number of retries
-        """
-        while retries:
-            response = requests.post(self.refresh_url, data=self._get_refresh_data())
-            if response.status_code == 200:
-                resp_json = response.json()
-                expires_at = datetime.fromtimestamp(float(resp_json['expires_on']))
-                self.client.save_credentials(resp_json['access_token'],
-                                             resp_json['refresh_token'],
-                                             expires_at=expires_at,
-                                             user_id=self.client.user_id)
-                return True
-            retries -= 1
-        return False
