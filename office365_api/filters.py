@@ -15,18 +15,3 @@ class BaseFilter(object):
         ]
         qs_list.extend([(k + '=' + str(self.custom_qs[k])) for k in self.custom_qs])
         return '&'.join([qs for qs in qs_list if qs])
-
-
-class AllMessagesFilter(BaseFilter):
-
-    def __init__(self, start_date, end_date):
-        self.order_by = ['createdDateTime asc']
-        self.filter_by = [
-            'isDraft eq false',
-            'createdDateTime ge {}'.format(start_date.strftime('%Y-%m-%d')),
-            'createdDateTime le {}'.format(end_date.strftime('%Y-%m-%d'))
-        ]
-        self.select = [
-            'subject', 'from', 'toRecipients', 'ccRecipients',
-            'body', 'sentDateTime', 'receivedDateTime', 'createdDateTime'
-        ]

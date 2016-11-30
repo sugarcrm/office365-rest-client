@@ -7,7 +7,6 @@ import oauth2client.transport
 from .exceptions import Office365ClientError
 from .exceptions import Office365ServerError
 from .filters import BaseFilter
-from .filters import AllMessagesFilter
 
 
 class BaseService(object):
@@ -90,10 +89,10 @@ class CalendarService(BaseAPIService):
 class OutlookService(BaseAPIService):
     path = '/MailFolders/AllItems/messages'
 
-    def get_messages(self, start_date, end_date):
+    def get_messages(self, filter_backend=None, **kwargs):
         """
         Return all messages from the mailbox starting from a datetime given
         """
-        filter_backend = AllMessagesFilter(start_date, end_date)
+        filter_backend = filter_backend or BaseFilter(custom_qs=kwargs)
         headers = {'Prefer': 'outlook.allow-unsafe-html'}
         return self.get_list(filter_backend, custom_headers=headers)
