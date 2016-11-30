@@ -14,4 +14,5 @@ class BaseFilter(object):
             '$select={}'.format(','.join(self.select)) if self.select else ''
         ]
         qs_list.extend([(k + '=' + str(self.custom_qs[k])) for k in self.custom_qs])
-        return '&'.join([qs for qs in qs_list if qs])
+        qs = '&'.join([qs for qs in qs_list if qs])
+        return qs.replace(' ', '+')
