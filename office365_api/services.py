@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import logging
 import urlparse
 
 import oauth2client.transport
@@ -7,6 +8,9 @@ import oauth2client.transport
 from .exceptions import Office365ClientError
 from .exceptions import Office365ServerError
 from .filters import BaseFilter
+
+
+logger = logging.getLogger(__name__)
 
 
 class BaseService(object):
@@ -56,6 +60,7 @@ class BaseAPIService(BaseService):
         """
         Try API request; if access_token is expired, request a new one
         """
+        logger.info('{}: {}'.format(method.upper(), url))
         resp, content = oauth2client.transport.request(self.client.http, url,
                                                        method=method.upper(),
                                                        body=body,
