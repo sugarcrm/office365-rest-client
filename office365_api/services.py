@@ -87,7 +87,6 @@ class CalendarService(BaseAPIService):
 
 
 class OutlookService(BaseAPIService):
-    path = '/MailFolders/AllItems/messages'
 
     def get_messages(self, filter_backend=None, **kwargs):
         """
@@ -95,4 +94,6 @@ class OutlookService(BaseAPIService):
         """
         filter_backend = filter_backend or BaseFilter(custom_qs=kwargs)
         headers = {'Prefer': 'outlook.allow-unsafe-html'}
-        return self.get_list(filter_backend, custom_headers=headers)
+        return self.get_list(filter_backend,
+                             path='/MailFolders/AllItems/messages',
+                             custom_headers=headers)
