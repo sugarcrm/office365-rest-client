@@ -120,4 +120,5 @@ class AttachmentService(BaseAPIService):
         """
         filter_backend = filter_backend or BaseFilter(custom_qs=kwargs)
         path = '/messages/{}/attachments/{}'.format(message_id, attachment_id)
-        return self.get_list(filter_backend, path=path)
+        url = self.get_complete_url(path=path, filter_backend=filter_backend)
+        return self.execute_request(url)
