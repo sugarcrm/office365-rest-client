@@ -102,3 +102,22 @@ class OutlookService(BaseAPIService):
         return self.get_list(filter_backend,
                              path='/MailFolders/AllItems/messages',
                              custom_headers=headers)
+
+
+class AttachmentService(BaseAPIService):
+
+    def get_attachments(self, message_id, filter_backend=None, **kwargs):
+        """
+        Return all attachments from a given message
+        """
+        filter_backend = filter_backend or BaseFilter(custom_qs=kwargs)
+        path = '/messages/{}/attachments'.format(message_id)
+        return self.get_list(filter_backend, path=path)
+
+    def get_attachment(self, message_id, attachment_id, filter_backend=None, **kwargs):
+        """
+        Return an attachment
+        """
+        filter_backend = filter_backend or BaseFilter(custom_qs=kwargs)
+        path = '/messages/{}/attachments/{}'.format(message_id, attachment_id)
+        return self.get_list(filter_backend, path=path)
