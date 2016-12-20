@@ -3,10 +3,10 @@ class Office365ClientError(Exception):
 
     def __init__(self, status_code, data):
         super(Office365ClientError, self).__init__('{}: {}: {}'.format(
-            status_code, data['error'], data['error_message']))
+            status_code, data['error']['code'], data['error']['message']))
         self.status_code = status_code
-        self.error = data['error']
-        self.error_message = data['error_message']
+        self.error = data['error']['code']
+        self.error_message = data['error']['message']
 
     @property
     def is_not_found(self):
