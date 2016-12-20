@@ -17,7 +17,7 @@ class BaseService(object):
 
 
 class BaseAPIService(BaseService):
-    url = 'https://outlook.office.com/api/v2.0/me'
+    url = 'https://graph.microsoft.com/v1.0/me'
     path = None
 
     def get_complete_url(self, path='', filter_backend=None):
@@ -35,8 +35,6 @@ class BaseAPIService(BaseService):
         """
         Retrieve list
         """
-        assert not self.path, 'A path must be provided'
-
         result = []
         delta_token = ''
         next_link = self.get_complete_url(path=path or self.path,
@@ -84,11 +82,11 @@ class CalendarService(BaseAPIService):
             kwargs['$deltaToken'] = kwargs.pop('deltaToken')
         filter_backend = filter_backend or BaseFilter(custom_qs=kwargs)
         headers = {'Prefer': 'odata.track-changes,odata.maxpagesize=100'}
-        return self.get_list(filter_backend, path='/CalendarView', custom_headers=headers)
+        return self.get_list(filter_backend, path='/calendarView', custom_headers=headers)
 
 
 class OutlookService(BaseAPIService):
-    path = '/MailFolders/AllItems/messages'
+    path = '/messages'
 
     def get_messages(self, start_date, end_date):
         """

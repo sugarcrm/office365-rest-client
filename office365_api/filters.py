@@ -20,6 +20,7 @@ class BaseFilter(object):
 class AllMessagesFilter(BaseFilter):
 
     def __init__(self, start_date, end_date):
+        self.custom_qs = ''
         self.order_by = ['createdDateTime asc']
         self.filter_by = [
             'isDraft eq false',
