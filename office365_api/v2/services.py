@@ -126,3 +126,17 @@ class EventService(BaseService):
         method = 'post'
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
+
+
+class MessageService(BaseService):
+    def list(self, filters=None):
+        path = '/messages'
+        method = 'get'
+        return self.execute_request(method, path, query_params=filters)
+
+
+class AttachmentService(BaseService):
+    def get(self, message_id, attachment_id, filters=None):
+        path = '/messages/{}/attachments/{}'.format(message_id, attachment_id)
+        method = 'get'
+        return self.execute_request(method, path, query_params=filters)
