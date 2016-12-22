@@ -76,6 +76,7 @@ class ServicesCollection(object):
         self.prefix = prefix
 
         self.calendar = CalendarService(self.client, self.prefix)
+        self.event = EventService(self.client, self.prefix)
 
 
 class BaseFactory(object):
