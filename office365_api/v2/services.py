@@ -120,9 +120,14 @@ class CalendarService(BaseService):
 
 
 class EventService(BaseService):
-    def create(self, **kwargs):
-        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_post_events """
-        path = '/events'
+    def create(self, calendar_id=None, **kwargs):
+        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_post_events """
+        if calendar_id:
+            # create in specific calendar
+            path = '/calendars/' + calendar_id + '/events'
+        else:
+            # create in default calendar
+            path = '/calendar/events'
         method = 'post'
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
