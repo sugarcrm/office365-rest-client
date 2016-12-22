@@ -91,7 +91,7 @@ class UserServicesFactory(BaseFactory):
             # special case for 'me'
             return ServicesCollection(self.client, 'me')
         else:
-            return ServicesCollection(self.client, '/users/' + user_id)
+            return ServicesCollection(self.client, 'users/' + user_id)
 
 
 class CalendarService(BaseService):
