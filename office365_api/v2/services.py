@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
-import urlparse
 import urllib
 
 import oauth2client.transport
@@ -77,6 +76,8 @@ class ServicesCollection(object):
 
         self.calendar = CalendarService(self.client, self.prefix)
         self.event = EventService(self.client, self.prefix)
+        self.message = MessageService(self.client, self.prefix)
+        self.attachment = AttachmentService(self.client, self.prefix)
 
 
 class BaseFactory(object):
@@ -129,14 +130,15 @@ class EventService(BaseService):
 
 
 class MessageService(BaseService):
-    def list(self, filters=None):
+    def list(self, __filters=None):
+        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages """
         path = '/messages'
         method = 'get'
-        return self.execute_request(method, path, query_params=filters)
+        return self.execute_request(method, path, query_params=__filters)
 
 
 class AttachmentService(BaseService):
-    def get(self, message_id, attachment_id, filters=None):
+    def get(self, message_id, attachment_id, __filters=None):
         path = '/messages/{}/attachments/{}'.format(message_id, attachment_id)
         method = 'get'
-        return self.execute_request(method, path, query_params=filters)
+        return self.execute_request(method, path, query_params=__filters)
