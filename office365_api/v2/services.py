@@ -65,17 +65,14 @@ class BaseService(object):
         if resp.status < 300:
             if content:
                 return json.loads(content)
-        else:
+        elif resp.status < 500:
             try:
                 error_data = json.loads(content)
             except ValueError:
-                # server failed to returned valid json
-                # probably a critical error on the server happened
-                print content
-                raise Office365ServerError(resp.status, content)
-            else:
-                print error_data
-                raise Office365ClientError(resp.status, error_data)
+                error_data = content
+            raise Office365ClientError(resp.status, error_data)
+        else:
+            raise Office365ServerError(resp.status, content)
 
 
 class ServicesCollection(object):
@@ -171,6 +168,11 @@ class EventService(BaseService):
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
+
+    def get(self, event_id):
+        path = '/calendar/events/' + event_id
+        method = 'get'
+        return self.execute_request(method, path, body=body)
 
     def update(self, event_id, **kwargs):
         path = '/calendar/events/' + event_id
