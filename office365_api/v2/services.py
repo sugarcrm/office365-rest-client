@@ -88,6 +88,7 @@ class ServicesCollection(object):
 
         self.calendar = CalendarService(self.client, self.prefix)
         self.event = EventService(self.client, self.prefix)
+        self.user = UserService(self.client, self.prefix)
 
 
 class BaseFactory(object):
@@ -103,6 +104,14 @@ class UserServicesFactory(BaseFactory):
             return ServicesCollection(self.client, 'me')
         else:
             return ServicesCollection(self.client, 'users/' + user_id)
+
+
+class UserService(BaseService):
+    def get(self):
+        path = ''
+        method = 'get'
+        resp = self.execute_request(method, path)
+        return resp
 
 
 class CalendarService(BaseService):
