@@ -131,3 +131,30 @@ class EventService(BaseService):
         method = 'post'
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
+
+    def list(self, calendar_id=None, __filter=''):
+        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_list_events """
+        if calendar_id:
+            # create in specific calendar
+            path = '/calendars/' + calendar_id + '/events'
+        else:
+            # create in default calendar
+            path = '/calendar/events'
+        method = 'get'
+        query_params = None
+        if __filter:
+            query_params = {
+                '$filter': __filter
+            }
+        return self.execute_request(method, path, query_params=query_params)
+
+    def update(self, event_id, **kwargs):
+        path = '/calendar/events/' + event_id
+        method = 'patch'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
+
+    def delete(self, event_id):
+        path = '/calendar/events/' + event_id
+        method = 'delete'
+        return self.execute_request(method, path)
