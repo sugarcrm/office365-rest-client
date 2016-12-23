@@ -26,6 +26,17 @@ class BaseService(object):
             path = path.lstrip('/')
         return '%s/%s/%s/%s' % (self.base_url, self.graph_api_version, self.prefix, path)
 
+    def follow_next_link(self, next_link):
+        """
+        Simply execute the request for next_link.
+        """
+        # remove the prefix, as we only need the relative path
+        full_prefix = '%s/%s/%s' % (self.base_url, self.graph_api_version, self.prefix)
+        _, _, path = next_link.partition(full_prefix)
+        resp = self.execute_request('get', path)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
+
     def execute_request(self, method, path, query_params=None, headers=None, body=None,
                         parse_json_result=True):
         """
@@ -100,7 +111,9 @@ class CalendarService(BaseService):
         # TODO: handle pagination
         path = '/calendars'
         method = 'get'
-        return self.execute_request(method, path)
+        resp = self.execute_request(method, path)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
 
     def get(self, calendar_id=None):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_get """
@@ -146,7 +159,9 @@ class EventService(BaseService):
             query_params = {
                 '$filter': __filter
             }
-        return self.execute_request(method, path, query_params=query_params)
+        resp = self.execute_request(method, path, query_params=query_params)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
 
     def update(self, event_id, **kwargs):
         path = '/calendar/events/' + event_id
