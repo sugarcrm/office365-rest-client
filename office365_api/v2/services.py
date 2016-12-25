@@ -69,7 +69,7 @@ class BaseService(object):
             try:
                 error_data = json.loads(content)
             except ValueError:
-                error_data = content
+                error_data = {'error': {'message': content, 'code': 'uknown'}}
             raise Office365ClientError(resp.status, error_data)
         else:
             raise Office365ServerError(resp.status, content)
