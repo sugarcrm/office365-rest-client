@@ -172,7 +172,7 @@ class EventService(BaseService):
     def get(self, event_id):
         path = '/calendar/events/' + event_id
         method = 'get'
-        return self.execute_request(method, path, body=body)
+        return self.execute_request(method, path)
 
     def update(self, event_id, **kwargs):
         path = '/calendar/events/' + event_id
