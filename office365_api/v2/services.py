@@ -151,7 +151,7 @@ class EventService(BaseService):
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
-    def list(self, calendar_id=None, __filter=''):
+    def list(self, calendar_id=None, _filter=''):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_list_events """
         if calendar_id:
             # create in specific calendar
@@ -161,9 +161,9 @@ class EventService(BaseService):
             path = '/calendar/events'
         method = 'get'
         query_params = None
-        if __filter:
+        if _filter:
             query_params = {
-                '$filter': __filter
+                '$filter': _filter
             }
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
