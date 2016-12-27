@@ -222,7 +222,17 @@ class MessageService(BaseService):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages """
         path = '/messages'
         method = 'get'
-        return self.execute_request(method, path, query_params=_filter)
+
+        result = []
+        resp = self.execute_request(method, path, query_params=_filter)
+        result.extend(resp['value'])
+        next_link = resp.get('@odata.nextLink')
+
+        while next_link:
+            resp, next_link = self.follow_next_link(next_link)
+            result.extend(resp['value'])
+
+        return result
 
 
 class AttachmentService(BaseService):
