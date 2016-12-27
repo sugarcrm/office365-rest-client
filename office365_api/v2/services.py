@@ -197,6 +197,11 @@ class MessageService(BaseService):
 
 
 class AttachmentService(BaseService):
+    def list(self, message_id, _filter=None):
+        path = '/messages/{}/attachments'.format(message_id)
+        method = 'get'
+        return self.execute_request(method, path, query_params=_filter)
+
     def get(self, message_id, attachment_id, _filter=None):
         path = '/messages/{}/attachments/{}'.format(message_id, attachment_id)
         method = 'get'
