@@ -25,6 +25,17 @@ class BaseService(object):
             path = path.lstrip('/')
         return '%s/%s/%s/%s' % (self.base_url, self.graph_api_version, self.prefix, path)
 
+    def follow_next_link(self, next_link):
+        """
+        Simply execute the request for next_link.
+        """
+        # remove the prefix, as we only need the relative path
+        full_prefix = '%s/%s/%s' % (self.base_url, self.graph_api_version, self.prefix)
+        _, _, path = next_link.partition(full_prefix)
+        resp = self.execute_request('get', path)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
+
     def execute_request(self, method, path, query_params=None, headers=None, body=None,
                         parse_json_result=True):
         """
@@ -53,17 +64,14 @@ class BaseService(object):
         if resp.status < 300:
             if content:
                 return json.loads(content)
-        else:
+        elif resp.status < 500:
             try:
                 error_data = json.loads(content)
             except ValueError:
-                # server failed to returned valid json
-                # probably a critical error on the server happened
-                print content
-                raise Office365ServerError(resp.status, content)
-            else:
-                print error_data
-                raise Office365ClientError(resp.status, error_data)
+                error_data = {'error': {'message': content, 'code': 'uknown'}}
+            raise Office365ClientError(resp.status, error_data)
+        else:
+            raise Office365ServerError(resp.status, content)
 
 
 class ServicesCollection(object):
@@ -78,6 +86,8 @@ class ServicesCollection(object):
         self.event = EventService(self.client, self.prefix)
         self.message = MessageService(self.client, self.prefix)
         self.attachment = AttachmentService(self.client, self.prefix)
+
+        self.user = UserService(self.client, self.prefix)
 
 
 class BaseFactory(object):
@@ -95,13 +105,23 @@ class UserServicesFactory(BaseFactory):
             return ServicesCollection(self.client, 'users/' + user_id)
 
 
+class UserService(BaseService):
+    def get(self):
+        path = ''
+        method = 'get'
+        resp = self.execute_request(method, path)
+        return resp
+
+
 class CalendarService(BaseService):
     def list(self):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendars """
         # TODO: handle pagination
         path = '/calendars'
         method = 'get'
-        return self.execute_request(method, path)
+        resp = self.execute_request(method, path)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
 
     def get(self, calendar_id=None):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_get """
@@ -121,24 +141,63 @@ class CalendarService(BaseService):
 
 
 class EventService(BaseService):
-    def create(self, **kwargs):
-        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_post_events """
-        path = '/events'
+    def create(self, calendar_id=None, **kwargs):
+        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_post_events """
+        if calendar_id:
+            # create in specific calendar
+            path = '/calendars/' + calendar_id + '/events'
+        else:
+            # create in default calendar
+            path = '/calendar/events'
         method = 'post'
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
+    def list(self, calendar_id=None, _filter=''):
+        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_list_events """
+        if calendar_id:
+            # create in specific calendar
+            path = '/calendars/' + calendar_id + '/events'
+        else:
+            # create in default calendar
+            path = '/calendar/events'
+        method = 'get'
+        query_params = None
+        if _filter:
+            query_params = {
+                '$filter': _filter
+            }
+        resp = self.execute_request(method, path, query_params=query_params)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
+
+    def get(self, event_id):
+        path = '/calendar/events/' + event_id
+        method = 'get'
+        return self.execute_request(method, path)
+
+    def update(self, event_id, **kwargs):
+        path = '/calendar/events/' + event_id
+        method = 'patch'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
+
+    def delete(self, event_id):
+        path = '/calendar/events/' + event_id
+        method = 'delete'
+        return self.execute_request(method, path)
+
 
 class MessageService(BaseService):
-    def list(self, __filters=None):
+    def list(self, _filter=None):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages """
         path = '/messages'
         method = 'get'
-        return self.execute_request(method, path, query_params=__filters)
+        return self.execute_request(method, path, query_params=_filter)
 
 
 class AttachmentService(BaseService):
-    def get(self, message_id, attachment_id, __filters=None):
+    def get(self, message_id, attachment_id, _filter=None):
         path = '/messages/{}/attachments/{}'.format(message_id, attachment_id)
         method = 'get'
-        return self.execute_request(method, path, query_params=__filters)
+        return self.execute_request(method, path, query_params=_filter)
