@@ -83,6 +83,7 @@ class ServicesCollection(object):
         self.prefix = prefix
 
         self.calendar = CalendarService(self.client, self.prefix)
+        self.calendarview = CalendarViewService(self.client, self.prefix)
         self.event = EventService(self.client, self.prefix)
         self.message = MessageService(self.client, self.prefix)
         self.attachment = AttachmentService(self.client, self.prefix)
@@ -186,6 +187,14 @@ class EventService(BaseService):
         path = '/calendar/events/' + event_id
         method = 'delete'
         return self.execute_request(method, path)
+
+
+class CalendarViewService(BaseService):
+    def list(self, _filter=None):
+        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendarview """
+        path = '/calendarView'
+        method = 'get'
+        return self.execute_request(method, path, query_params=_filter)
 
 
 class MessageService(BaseService):
