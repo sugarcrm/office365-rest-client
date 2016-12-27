@@ -56,6 +56,8 @@ class BaseService(object):
         }
         if headers:
             default_headers.update(headers)
+
+        logger.info('{}: {}'.format(method.upper(), full_url))
         resp, content = oauth2client.transport.request(self.client.http,
                                                        full_url,
                                                        method=method.upper(),
