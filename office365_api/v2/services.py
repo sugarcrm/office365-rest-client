@@ -2,7 +2,6 @@
 import json
 import logging
 import urllib
-import urlparse
 
 import oauth2client.transport
 
@@ -197,24 +196,7 @@ class CalendarViewService(BaseService):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendarview """
         path = '/calendarView'
         method = 'get'
-
-        result = []
-        delta_token = ''
-
-        resp = self.execute_request(method, path, query_params=_filter)
-        result.extend(resp['value'])
-        next_link = resp.get('@odata.nextLink')
-
-        while next_link:
-            resp, next_link = self.follow_next_link(next_link)
-            result.extend(resp['value'])
-            delta_link = resp.get('@odata.deltaLink', '')
-            delta_link_qs = urlparse.parse_qs(urlparse.urlparse(delta_link).query)
-            if not next_link and (delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')):
-                delta_token_qs = delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')
-                delta_token = delta_token_qs[0] if delta_token_qs else ''
-
-        return result, delta_token
+        return self.execute_request(method, path, query_params=_filter)
 
 
 class MessageService(BaseService):
@@ -222,17 +204,7 @@ class MessageService(BaseService):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages """
         path = '/messages'
         method = 'get'
-
-        result = []
-        resp = self.execute_request(method, path, query_params=_filter)
-        result.extend(resp['value'])
-        next_link = resp.get('@odata.nextLink')
-
-        while next_link:
-            resp, next_link = self.follow_next_link(next_link)
-            result.extend(resp['value'])
-
-        return result
+        return self.execute_request(method, path, query_params=_filter)
 
 
 class AttachmentService(BaseService):
