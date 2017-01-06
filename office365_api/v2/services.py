@@ -206,6 +206,13 @@ class MessageService(BaseService):
         method = 'get'
         return self.execute_request(method, path, query_params=_filter)
 
+    def create(self, **kwargs):
+        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_post_messages """
+        path = '/messages'
+        method = 'post'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
+
 
 class AttachmentService(BaseService):
     def list(self, message_id, _filter=None):
@@ -217,3 +224,10 @@ class AttachmentService(BaseService):
         path = '/messages/{}/attachments/{}'.format(message_id, attachment_id)
         method = 'get'
         return self.execute_request(method, path, query_params=_filter)
+
+    def create(self, message_id, **kwargs):
+        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/message_post_attachments """
+        path = '/messages/{}/attachments'.format(message_id)
+        method = 'post'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
