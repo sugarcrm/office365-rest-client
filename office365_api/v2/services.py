@@ -206,6 +206,12 @@ class MessageService(BaseService):
         method = 'get'
         return self.execute_request(method, path, query_params=_filter)
 
+    def get(self, message_id, _filter=None):
+        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages """
+        path = '/messages/{}'.format(message_id)
+        method = 'get'
+        return self.execute_request(method, path, query_params=_filter)
+
     def create(self, **kwargs):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_post_messages """
         path = '/messages'
