@@ -89,6 +89,8 @@ class ServicesCollection(object):
         self.event = EventService(self.client, self.prefix)
         self.message = MessageService(self.client, self.prefix)
         self.attachment = AttachmentService(self.client, self.prefix)
+        self.contactfolder = ContactFolderService(self.client, self.prefix)
+        self.contact = ContactService(self.client, self.prefix)
 
         self.user = UserService(self.client, self.prefix)
 
@@ -291,4 +293,9 @@ class ContactService(BaseService):
     def get(self, contact_id):
         path = '/contacts/' + contact_id
         method = 'get'
+        return self.execute_request(method, path)
+
+    def delete(self, contact_id):
+        path = '/contacts/' + contact_id
+        method = 'delete'
         return self.execute_request(method, path)
