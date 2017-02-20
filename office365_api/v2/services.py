@@ -237,3 +237,58 @@ class AttachmentService(BaseService):
         method = 'post'
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
+
+
+class ContactFolderService(BaseService):
+    def list(self):
+        path = '/contactFolders'
+        method = 'get'
+        resp = self.execute_request(method, path)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
+
+    def get(self, folder_id):
+        path = '/contactFolders/' + folder_id
+        method = 'get'
+        return self.execute_request(method, path)
+
+    def create(self, **kwargs):
+        path = '/contactFolders'
+        method = 'post'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
+
+
+class ContactService(BaseService):
+    def create(self, contact_folder_id=None, **kwargs):
+        if contact_folder_id:
+            # create in specific folder
+            path = '/contactFolders/' + contact_folder_id + '/contacts'
+        else:
+            # create in default calendar
+            path = '/contacts'
+        method = 'post'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
+
+    def list(self, contact_folder_id=None, _filter=''):
+        if contact_folder_id:
+            # list in specific folder
+            path = '/contactFolders/' + contact_folder_id + '/contacts'
+        else:
+            # create in default calendar
+            path = '/contacts'
+        method = 'get'
+        query_params = None
+        if _filter:
+            query_params = {
+                '$filter': _filter
+            }
+        resp = self.execute_request(method, path, query_params=query_params)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
+
+    def get(self, contact_id):
+        path = '/contacts/' + contact_id
+        method = 'get'
+        return self.execute_request(method, path)
