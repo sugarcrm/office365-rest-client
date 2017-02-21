@@ -299,3 +299,9 @@ class ContactService(BaseService):
         path = '/contacts/' + contact_id
         method = 'delete'
         return self.execute_request(method, path)
+
+    def update(self, contact_id, **kwargs):
+        path = '/contacts/' + contact_id
+        method = 'patch'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
