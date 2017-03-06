@@ -91,6 +91,7 @@ class ServicesCollection(object):
         self.attachment = AttachmentService(self.client, self.prefix)
         self.contactfolder = ContactFolderService(self.client, self.prefix)
         self.contact = ContactService(self.client, self.prefix)
+        self.mailfolder = MailFolderService(self.client, self.prefix)
 
         self.user = UserService(self.client, self.prefix)
 
@@ -305,3 +306,23 @@ class ContactService(BaseService):
         method = 'patch'
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
+
+
+class MailFolderService(BaseService):
+    def create(self, **kwargs):
+        path = '/mailFolders'
+        method = 'post'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
+
+    def list(self):
+        path = '/mailFolders'
+        method = 'get'
+        resp = self.execute_request(method, path)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
+
+    def get(self, folder_id):
+        path = '/mailFolders/' + folder_id
+        method = 'get'
+        return self.execute_request(method, path)
