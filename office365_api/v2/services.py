@@ -227,6 +227,7 @@ class AttachmentService(BaseService):
     def list(self, message_id, _filter=None):
         path = '/messages/{}/attachments'.format(message_id)
         method = 'get'
+        # FIXME: this should return a tuple with a 'next_link', like the other 'list' methods
         return self.execute_request(method, path, query_params=_filter)
 
     def get(self, message_id, attachment_id, _filter=None):
@@ -326,3 +327,16 @@ class MailFolderService(BaseService):
         path = '/mailFolders/' + folder_id
         method = 'get'
         return self.execute_request(method, path)
+
+    def list_childfolders(self, folder_id):
+        path = '/mailFolders/' + folder_id + '/childFolders'
+        method = 'get'
+        resp = self.execute_request(method, path)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
+
+    def create_childfolder(self, folder_id, **kwargs):
+        path = '/mailFolders/' + folder_id + '/childFolders'
+        method = 'post'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
