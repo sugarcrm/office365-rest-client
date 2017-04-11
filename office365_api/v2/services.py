@@ -222,6 +222,26 @@ class MessageService(BaseService):
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
+    def send(self, message_id, **kwargs):
+        """ https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/api/message_send """
+        path = '/messages/{}/send'.format(message_id)
+        # TODO: figure out why this doesn't work with execute_request (maybe the headers?)
+        resp, content = oauth2client.transport.request(self.client.http,
+                                                       self.build_url(path),
+                                                       method='POST',
+                                                       headers={'Content-Length': 0})
+        if resp.status < 300:
+            if content:
+                return json.loads(content)
+        elif resp.status < 500:
+            try:
+                error_data = json.loads(content)
+            except ValueError:
+                error_data = {'error': {'message': content, 'code': 'uknown'}}
+            raise Office365ClientError(resp.status, error_data)
+        else:
+            raise Office365ServerError(resp.status, content)
+
 
 class AttachmentService(BaseService):
     def list(self, message_id, _filter=None):
