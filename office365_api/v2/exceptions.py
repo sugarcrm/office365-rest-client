@@ -24,7 +24,7 @@ class Office365ClientError(Exception):
 
     def __repr__(self):
         return '<{0}>: {1} {2} ({3})'.format(
-            'Office365ClientError', self.status_code, self.error, self.error_message)
+            'Office365ClientError', self.status_code, self.error_code, self.error_message)
 
 
 class Office365ServerError(Exception):
