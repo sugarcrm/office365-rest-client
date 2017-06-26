@@ -225,7 +225,8 @@ class MessageService(BaseService):
     def send(self, message_id, **kwargs):
         """ https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/api/message_send """
         path = '/messages/{}/send'.format(message_id)
-        # TODO: figure out why this doesn't work with execute_request (maybe the headers?)
+        # this request fails if Content-Type header is set
+        # to work around this, we don't use self.execute_request()
         resp, content = oauth2client.transport.request(self.client.http,
                                                        self.build_url(path),
                                                        method='POST',
