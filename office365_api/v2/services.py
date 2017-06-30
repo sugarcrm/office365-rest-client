@@ -243,6 +243,12 @@ class MessageService(BaseService):
         else:
             raise Office365ServerError(resp.status, content)
 
+    def move(self, message_id, destination_id):
+        path = '/messages/{}/move'.format(message_id)
+        method = 'post'
+        body = json.dumps({'DestinationId': destination_id})
+        return self.execute_request(method, path, body=body)
+
 
 class AttachmentService(BaseService):
     def list(self, message_id, _filter=None):
