@@ -243,6 +243,12 @@ class MessageService(BaseService):
         else:
             raise Office365ServerError(resp.status, content)
 
+    def update(self, message_id, **kwargs):
+        path = '/messages/{}'.format(message_id)
+        method = 'patch'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
+
     def move(self, message_id, destination_id):
         path = '/messages/{}/move'.format(message_id)
         method = 'post'
