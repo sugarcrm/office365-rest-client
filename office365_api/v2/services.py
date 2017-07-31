@@ -195,11 +195,11 @@ class EventService(BaseService):
 
 
 class CalendarViewService(BaseService):
-    def list(self, _filter=None):
+    def list(self):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendarview """
         path = '/calendarView'
         method = 'get'
-        return self.execute_request(method, path, query_params=_filter)
+        return self.execute_request(method, path)
 
 
 class MessageService(BaseService):
@@ -207,7 +207,14 @@ class MessageService(BaseService):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages """
         path = '/messages'
         method = 'get'
-        return self.execute_request(method, path, query_params=_filter)
+        query_params = None
+        if _filter:
+            query_params = {
+                '$filter': _filter
+            }
+        resp = self.execute_request(method, path, query_params=query_params)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
 
     def get(self, message_id, _filter=None):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages """
@@ -260,13 +267,31 @@ class AttachmentService(BaseService):
     def list(self, message_id, _filter=None):
         path = '/messages/{}/attachments'.format(message_id)
         method = 'get'
-        # FIXME: this should return a tuple with a 'next_link', like the other 'list' methods
-        return self.execute_request(method, path, query_params=_filter)
+        query_params = None
+        if _filter:
+            query_params = {
+                '$filter': _filter
+            }
+        resp = self.execute_request(method, path, query_params=query_params)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
 
-    def get(self, message_id, attachment_id, _filter=None):
+    def list_first_page(self, message_id, _filter=None):
+        # backwards compatibility
+        path = '/messages/{}/attachments'.format(message_id)
+        method = 'get'
+        query_params = None
+        if _filter:
+            query_params = {
+                '$filter': _filter
+            }
+        resp = self.execute_request(method, path, query_params=query_params)
+        return resp
+
+    def get(self, message_id, attachment_id):
         path = '/messages/{}/attachments/{}'.format(message_id, attachment_id)
         method = 'get'
-        return self.execute_request(method, path, query_params=_filter)
+        return self.execute_request(method, path)
 
     def create(self, message_id, **kwargs):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/message_post_attachments """
