@@ -195,11 +195,15 @@ class EventService(BaseService):
 
 
 class CalendarViewService(BaseService):
-    def list(self):
+    def list(self, start_datetime, end_datetime):
         """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendarview """
         path = '/calendarView'
         method = 'get'
-        return self.execute_request(method, path)
+        query_params = {
+            'startDateTime': start_datetime,
+            'endDateTime': end_datetime,
+        }
+        return self.execute_request(method, path, query_params=query_params)
 
 
 class MessageService(BaseService):
