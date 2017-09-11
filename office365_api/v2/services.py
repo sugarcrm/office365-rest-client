@@ -100,6 +100,31 @@ class BaseFactory(object):
     def __init__(self, client):
         self.client = client
 
+class SubscriptionFactory(BaseFactory):
+    def __init__(self):
+        return SubscriptionService(self.client, '')
+
+class SubscriptionService(BaseService):
+
+    def create(self, body={}):
+       """https://graph.microsoft.io/en-us/docs/api-reference/resources/webhooks ."""
+       path = 'subscriptions'
+       method = 'post'
+       _body = json.dumps(body)
+       return self.execute_request(method, path, body=_body)
+
+    def update(self, subscription_id, body={}):
+       """Extend the duration of the subscription."""
+       method = 'patch'
+       path = 'subscriptions/%s' % subscription_id
+       _body = json.dumps(body)
+       return self.execute_request(method, path, body=_body)
+
+    def delete(self, subscription_id):
+       """Unsubscribe to a webhook channel."""
+       path = 'subscriptions/%s' % subscription_id
+       method = 'delete'
+       return self.execute_request(method, path)
 
 class UserServicesFactory(BaseFactory):
     def __call__(self, user_id):
@@ -192,6 +217,7 @@ class EventService(BaseService):
         path = '/calendar/events/' + event_id
         method = 'delete'
         return self.execute_request(method, path)
+
 
 
 class CalendarViewService(BaseService):

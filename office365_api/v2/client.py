@@ -11,3 +11,4 @@ class MicrosoftGraphClient(object):
 
         self.users = UserServicesFactory(self)
         self.me = self.users('me')
+        self.subscription = SubscriptionFactory(self)
