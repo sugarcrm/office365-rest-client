@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib2
-from .services import UserServicesFactory
+from .services import UserServicesFactory, SubscriptionFactory
 
 
 class MicrosoftGraphClient(object):
