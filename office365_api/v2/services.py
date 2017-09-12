@@ -106,14 +106,14 @@ class SubscriptionFactory(BaseFactory):
 
 class SubscriptionService(BaseService):
 
-    def create(self, body={}):
-       """https://graph.microsoft.io/en-us/docs/api-reference/resources/webhooks ."""
+    def create(self, body=None):
+       """https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/resources/webhooks ."""
        path = 'subscriptions'
        method = 'post'
        _body = json.dumps(body)
        return self.execute_request(method, path, body=_body)
 
-    def update(self, subscription_id, body={}):
+    def update(self, subscription_id, body=None):
        """Extend the duration of the subscription."""
        method = 'patch'
        path = 'subscriptions/%s' % subscription_id
