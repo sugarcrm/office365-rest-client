@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib2
-from .services import UserServicesFactory
+from .services import UserServicesFactory, SubscriptionFactory
 
 
 class MicrosoftGraphClient(object):
@@ -11,3 +11,4 @@ class MicrosoftGraphClient(object):
 
         self.users = UserServicesFactory(self)
         self.me = self.users('me')
+        self.subscription = SubscriptionFactory(self)()
