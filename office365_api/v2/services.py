@@ -101,7 +101,7 @@ class BaseFactory(object):
         self.client = client
 
 class SubscriptionFactory(BaseFactory):
-    def __init__(self):
+    def __call__(self):
         return SubscriptionService(self.client, '')
 
 class SubscriptionService(BaseService):
