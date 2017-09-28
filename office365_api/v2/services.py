@@ -219,11 +219,17 @@ class EventService(BaseService):
         return self.execute_request(method, path)
 
 
-
 class CalendarViewService(BaseService):
-    def list(self, start_datetime, end_datetime):
-        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendarview """
+    def list(self, start_datetime, end_datetime, delta=False):
+        """
+        Calendarview plus the delta feature to track changes.
+
+        https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendarview
+        https://developer.microsoft.com/en-us/graph/docs/concepts/delta_query_overview
+        """
         path = '/calendarView'
+        if delta:
+            path += '/delta'
         method = 'get'
         query_params = {
             'startDateTime': start_datetime,
