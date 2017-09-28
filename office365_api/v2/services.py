@@ -220,7 +220,7 @@ class EventService(BaseService):
 
 
 class CalendarViewService(BaseService):
-    def list(self, start_datetime, end_datetime, delta=False):
+    def list(self, start_datetime, end_datetime, delta=False, max_entries=50):
         """
         Calendarview plus the delta feature to track changes.
 
@@ -230,12 +230,17 @@ class CalendarViewService(BaseService):
         path = '/calendarView'
         if delta:
             path += '/delta'
+
+        headers = {
+            'Prefer': 'odata.maxpagesize=%d' % max_entries
+        }
         method = 'get'
         query_params = {
             'startDateTime': start_datetime,
             'endDateTime': end_datetime,
         }
-        return self.execute_request(method, path, query_params=query_params)
+        return self.execute_request(method, path,
+                                    query_params=query_params, headers=headers)
 
 
 class MessageService(BaseService):
