@@ -239,8 +239,10 @@ class CalendarViewService(BaseService):
             'startDateTime': start_datetime,
             'endDateTime': end_datetime,
         }
-        return self.execute_request(method, path,
+        resp = self.execute_request(method, path,
                                     query_params=query_params, headers=headers)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
 
 
 class MessageService(BaseService):
