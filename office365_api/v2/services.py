@@ -220,25 +220,37 @@ class EventService(BaseService):
 
 
 class CalendarViewService(BaseService):
-    def list(self, start_datetime, end_datetime, delta=False, max_entries=50):
-        """
-        Calendarview plus the delta feature to track changes.
-
-        https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendarview
-        https://developer.microsoft.com/en-us/graph/docs/concepts/delta_query_overview
-        """
+    def list(self, start_datetime, end_datetime):
+        """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendarview."""
         path = '/calendarView'
-        if delta:
-            path += '/delta'
-
-        headers = {
-            'Prefer': 'odata.maxpagesize=%d' % max_entries
-        }
         method = 'get'
         query_params = {
             'startDateTime': start_datetime,
             'endDateTime': end_datetime,
         }
+        resp = self.execute_request(method, path, query_params=query_params)
+        return resp
+
+    def list_delta(self, start_datetime, end_datetime, delta_token=None, max_entries=50):
+        """
+        Support tracking of changes in the calendarview.
+
+        https://developer.microsoft.com/en-us/graph/docs/concepts/delta_query_overview
+        """
+        path = '/calendarView/delta'
+        method = 'get'
+        headers = {
+            'Prefer': 'odata.maxpagesize=%d' % max_entries
+        }
+        if not delta_token:
+            query_params = {
+                'startDateTime': start_datetime,
+                'endDateTime': end_datetime,
+            }
+        else:
+            query_params = {
+                '$deltaToken': delta_token,
+            }
         resp = self.execute_request(method, path,
                                     query_params=query_params, headers=headers)
         next_link = resp.get('@odata.nextLink')
