@@ -26,9 +26,7 @@ class BaseService(object):
         return '%s/%s/%s/%s' % (self.base_url, self.graph_api_version, self.prefix, path)
 
     def follow_next_link(self, next_link):
-        """
-        Simply execute the request for next_link.
-        """
+        """Simply execute the request for next_link."""
         # remove the prefix, as we only need the relative path
         full_prefix = '%s/%s/%s' % (self.base_url, self.graph_api_version, self.prefix)
         _, _, path = next_link.partition(full_prefix)
@@ -39,12 +37,12 @@ class BaseService(object):
     def execute_request(self, method, path, query_params=None, headers=None, body=None,
                         parse_json_result=True):
         """
-        path: the path of the api endpoint with leading slash (excluding the api version and user id prefix)
-        query_params: dict to be urlencoded and appended to the final url
-        headers: dict
-        body: bytestring to be used as request body
+        Run the http request and returns the json data upon success.
 
-        Returns the parsed JSON data of the response content if the request was successful.
+        path: the path of the api endpoint with leading slash (excluding the
+        api version and user id prefix) query_params: dict to be urlencoded and
+        appended to the final url headers: dict body: bytestring to be used as
+        request body
         """
         full_url = self.build_url(path)
         if query_params:
@@ -77,9 +75,8 @@ class BaseService(object):
 
 
 class ServicesCollection(object):
-    """
-    Wrap a collection of services in a context.
-    """
+    """Wrap a collection of services in a context."""
+
     def __init__(self, client, prefix):
         self.client = client
         self.prefix = prefix
@@ -100,31 +97,34 @@ class BaseFactory(object):
     def __init__(self, client):
         self.client = client
 
+
 class SubscriptionFactory(BaseFactory):
     def __call__(self):
         return SubscriptionService(self.client, '')
 
+
 class SubscriptionService(BaseService):
 
     def create(self, body=None):
-       """https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/resources/webhooks ."""
-       path = 'subscriptions'
-       method = 'post'
-       _body = json.dumps(body)
-       return self.execute_request(method, path, body=_body)
+        """https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/resources/webhooks ."""
+        path = 'subscriptions'
+        method = 'post'
+        _body = json.dumps(body)
+        return self.execute_request(method, path, body=_body)
 
     def update(self, subscription_id, body=None):
-       """Extend the duration of the subscription."""
-       method = 'patch'
-       path = 'subscriptions/%s' % subscription_id
-       _body = json.dumps(body)
-       return self.execute_request(method, path, body=_body)
+        """Extend the duration of the subscription."""
+        method = 'patch'
+        path = 'subscriptions/%s' % subscription_id
+        _body = json.dumps(body)
+        return self.execute_request(method, path, body=_body)
 
     def delete(self, subscription_id):
-       """Unsubscribe to a webhook channel."""
-       path = 'subscriptions/%s' % subscription_id
-       method = 'delete'
-       return self.execute_request(method, path)
+        """Unsubscribe to a webhook channel."""
+        path = 'subscriptions/%s' % subscription_id
+        method = 'delete'
+        return self.execute_request(method, path)
+
 
 class UserServicesFactory(BaseFactory):
     def __call__(self, user_id):
@@ -146,7 +146,7 @@ class UserService(BaseService):
 
 class CalendarService(BaseService):
     def list(self):
-        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendars """
+        """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendars."""
         # TODO: handle pagination
         path = '/calendars'
         method = 'get'
@@ -155,7 +155,7 @@ class CalendarService(BaseService):
         return resp, next_link
 
     def get(self, calendar_id=None):
-        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_get """
+        """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_get ."""
         if calendar_id:
             path = '/calendars/' + calendar_id
         else:
@@ -164,7 +164,7 @@ class CalendarService(BaseService):
         return self.execute_request(method, path)
 
     def create(self, **kwargs):
-        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_post_calendars """
+        """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_post_calendars ."""
         path = '/calendars'
         method = 'post'
         body = json.dumps(kwargs)
@@ -173,7 +173,7 @@ class CalendarService(BaseService):
 
 class EventService(BaseService):
     def create(self, calendar_id=None, **kwargs):
-        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_post_events """
+        """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_post_events ."""
         if calendar_id:
             # create in specific calendar
             path = '/calendars/' + calendar_id + '/events'
@@ -185,7 +185,7 @@ class EventService(BaseService):
         return self.execute_request(method, path, body=body)
 
     def list(self, calendar_id=None, _filter=''):
-        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_list_events """
+        """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_list_events ."""
         if calendar_id:
             # create in specific calendar
             path = '/calendars/' + calendar_id + '/events'
@@ -240,7 +240,7 @@ class CalendarViewService(BaseService):
 
 class MessageService(BaseService):
     def list(self, _filter=None):
-        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages """
+        """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages ."""
         path = '/messages'
         method = 'get'
         query_params = None
@@ -253,20 +253,20 @@ class MessageService(BaseService):
         return resp, next_link
 
     def get(self, message_id, _filter=None):
-        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages """
+        """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages ."""
         path = '/messages/{}'.format(message_id)
         method = 'get'
         return self.execute_request(method, path, query_params=_filter)
 
     def create(self, **kwargs):
-        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_post_messages """
+        """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_post_messages ."""
         path = '/messages'
         method = 'post'
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
     def send(self, message_id, **kwargs):
-        """ https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/api/message_send """
+        """https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/api/message_send ."""
         path = '/messages/{}/send'.format(message_id)
         # this request fails if Content-Type header is set
         # to work around this, we don't use self.execute_request()
@@ -330,7 +330,7 @@ class AttachmentService(BaseService):
         return self.execute_request(method, path)
 
     def create(self, message_id, **kwargs):
-        """ https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/message_post_attachments """
+        """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/message_post_attachments ."""
         path = '/messages/{}/attachments'.format(message_id)
         method = 'post'
         body = json.dumps(kwargs)
