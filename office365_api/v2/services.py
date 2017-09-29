@@ -230,7 +230,7 @@ class CalendarViewService(BaseService):
         }
         return self.execute_request(method, path, query_params=query_params)
 
-    def delta_list(self, start_datetime, end_datetime, delta_token=None, max_entries=50):
+    def delta_list(self, start_datetime=None, end_datetime=None, delta_token=None, max_entries=50):
         """
         Support tracking of changes in the calendarview.
 
