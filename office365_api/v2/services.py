@@ -170,6 +170,17 @@ class CalendarService(BaseService):
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
+    def delete(self, calendar_id):
+        path = '/calendars/' + calendar_id
+        method = 'delete'
+        return self.execute_request(method, path)
+
+    def update(self, calendar_id, **kwargs):
+        path = '/calendars/' + calendar_id
+        method = 'patch'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
+
 
 class EventService(BaseService):
     def create(self, calendar_id=None, **kwargs):
