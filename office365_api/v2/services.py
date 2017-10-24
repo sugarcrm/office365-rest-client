@@ -249,7 +249,7 @@ class CalendarViewService(BaseService):
         """
         path = ''
         if calendar_id:
-            path = '/calendar/%s' % calendar_id
+            path = '/calendars/%s' % calendar_id
         path += '/calendarView/delta'
 
         method = 'get'
