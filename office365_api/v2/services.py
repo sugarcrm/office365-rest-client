@@ -241,13 +241,17 @@ class CalendarViewService(BaseService):
         }
         return self.execute_request(method, path, query_params=query_params)
 
-    def delta_list(self, start_datetime=None, end_datetime=None, delta_token=None, max_entries=50):
+    def delta_list(self, start_datetime=None, end_datetime=None, delta_token=None, max_entries=50, calendar_id=None):
         """
         Support tracking of changes in the calendarview.
 
         https://developer.microsoft.com/en-us/graph/docs/concepts/delta_query_overview
         """
-        path = '/calendarView/delta'
+        path = ''
+        if calendar_id:
+            path = '/calendars/%s' % calendar_id
+        path += '/calendarView/delta'
+
         method = 'get'
         headers = {
             'Prefer': 'odata.maxpagesize=%d' % max_entries
