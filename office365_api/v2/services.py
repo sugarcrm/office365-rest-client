@@ -103,6 +103,87 @@ class SubscriptionFactory(BaseFactory):
         return SubscriptionService(self.client, '')
 
 
+class BatchService(BaseService):
+    def __init__(self, batch_uri=None):
+        if not batch_uri:
+            self.batch_uri = 'https://graph.microsoft.com/v1.0/$batch'
+
+        self._callback = callback
+
+        # A map from id to request.
+        self._requests = {}
+
+        # A map from id to callback.
+        self._callbacks = {}
+
+        # List of request ids, in the order in which they were added.
+        self._order = []
+
+        # The last auto generated id.
+        self._last_auto_id = 0
+
+        # A map from request id to (httplib2.Response, content) response pairs
+        self._responses = {}
+
+    def _new_id(self):
+        """Create a new id.
+        Auto incrementing number that avoids conflicts with ids already used.
+        Returns:
+           string, a new unique id.
+        """
+        self._last_auto_id += 1
+        while str(self._last_auto_id) in self._requests:
+            self._last_auto_id += 1
+
+        return str(self._last_auto_id)
+
+    def post(self, body):
+        path = '/beta/$batch'
+        method = 'post'
+        body = body
+
+    def add(self, request, callback=None):
+        if request_id in self._requests:
+            raise KeyError("A request with this ID already exists: %s" % request_id)
+
+        request_id = self._new_id()
+
+        self._requests[request_id] = request
+        self._callbacks[request_id] = callback
+        self._order.append(request_id)
+
+    def _execute(self,requests):
+        default_headers = {'Content-Type': 'application/json'}
+        resp, content = oauth2client.transport.request(self.client.http,
+                                                       full_url,
+                                                       method='POST',
+                                                       body=json.dumps( {'requests' : requests}),
+                                                       headers=default_headers)
+        if resp.status < 300:
+            if content:
+                return json.loads(content)
+        elif resp.status < 500:
+            try:
+                error_data = json.loads(content)
+            except ValueError:
+                error_data = {'error': {'message': content, 'code': 'unknown'}}
+            raise Office365ClientError(resp.status, error_data)
+        else:
+            raise Office365ServerError(resp.status, content)
+
+    def execute(self):
+        requests = []
+        for request_id in self._order:
+            request = self._request[request_id]
+            request['id'] = request_id
+            requests.append(request)
+
+        response = self._execute(requests)
+        logger.info("BATCH REQUEST")
+        logger.info(response)
+
+
+
 class SubscriptionService(BaseService):
 
     def create(self, body=None):
