@@ -108,7 +108,7 @@ class BatchService(BaseService):
         self.client = client
 
         if not batch_uri:
-            self.batch_uri = 'https://graph.microsoft.com/v1.0/$batch'
+            self.batch_uri = 'https://graph.microsoft.com/beta/$batch'
 
         self._callback = None
 
