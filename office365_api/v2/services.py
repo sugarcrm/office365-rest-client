@@ -126,10 +126,13 @@ class BatchService(BaseService):
         self._responses = {}
 
     def _new_id(self):
-        """Create a new id.
+        """
+        Create a new id.
+
         Auto incrementing number that avoids conflicts with ids already used.
         Returns:
            string, a new unique id.
+
         """
         self._last_auto_id += 1
         while str(self._last_auto_id) in self._requests:
@@ -137,27 +140,18 @@ class BatchService(BaseService):
 
         return str(self._last_auto_id)
 
-    def post(self, body):
-        path = '/beta/$batch'
-        method = 'post'
-        body = body
-
     def add(self, request, callback=None):
-        if request_id in self._requests:
-            raise KeyError("A request with this ID already exists: %s" % request_id)
-
         request_id = self._new_id()
-
         self._requests[request_id] = request
         self._callbacks[request_id] = callback
         self._order.append(request_id)
 
-    def _execute(self,requests):
+    def _execute(self, requests):
         default_headers = {'Content-Type': 'application/json'}
         resp, content = oauth2client.transport.request(self.client.http,
-                                                       full_url,
+                                                       self.batch_uri,
                                                        method='POST',
-                                                       body=json.dumps( {'requests' : requests}),
+                                                       body=json.dumps({'requests': requests}),
                                                        headers=default_headers)
         if resp.status < 300:
             if content:
@@ -179,9 +173,8 @@ class BatchService(BaseService):
             requests.append(request)
 
         response = self._execute(requests)
-        logger.info("BATCH REQUEST")
+        logger.info('BATCH REQUEST')
         logger.info(response)
-
 
 
 class SubscriptionService(BaseService):
