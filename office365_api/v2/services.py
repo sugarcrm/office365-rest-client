@@ -108,7 +108,7 @@ class BatchService(BaseService):
         if not batch_uri:
             self.batch_uri = 'https://graph.microsoft.com/beta/$batch'
 
-        self._callback = None
+        self._callbacks = {}
 
         # A map from id to request.
         self._requests = {}
@@ -175,13 +175,13 @@ class BatchService(BaseService):
 
         responses = self._execute(requests)
         for resp in responses:
-            self._response[resp['id']] = resp
+            self._responses[resp['id']] = resp
 
-        # Process the callback
+        # Process the callbacks
         for request_id in self._order:
-            response = self._response[request_id]
-            request = self._request[request_id]
-            callback = self._callback[request_id]
+            response = self._responses[request_id]
+            request = self._requests[request_id]
+            callback = self._callbacks[request_id]
             exception = None
             try:
                 if response['status'] >= 300:
