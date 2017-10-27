@@ -174,7 +174,7 @@ class BatchService(BaseService):
             requests.append(request)
 
         responses = self._execute(requests)
-        for resp in responses:
+        for resp in responses['responses']:
             self._responses[resp['id']] = resp
 
         # Process the callbacks
