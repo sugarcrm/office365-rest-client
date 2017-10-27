@@ -192,7 +192,7 @@ class BatchService(BaseService):
                 exception = e
 
             if callback is not None:
-                callback(request_id, response, exception)
+                callback(request_id, response['body'], exception)
 
 
 class SubscriptionService(BaseService):
