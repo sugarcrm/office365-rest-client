@@ -5,9 +5,7 @@ import urllib
 
 import oauth2client.transport
 
-from .exceptions import Office365ClientError
-from .exceptions import Office365ServerError
-
+from .exceptions import Office365ClientError, Office365ServerError
 
 logger = logging.getLogger(__name__)
 
@@ -175,9 +173,25 @@ class BatchService(BaseService):
             request['id'] = request_id
             requests.append(request)
 
-        response = self._execute(requests)
-        logger.info('BATCH REQUEST')
-        logger.info(response)
+        responses = self._execute(requests)
+        for resp in responses:
+            self._response[resp['id']] = resp
+
+        # Process the callback
+        for request_id in self._order:
+            response = self._response[request_id]
+            request = self._request[request_id]
+            callback = self._callback[request_id]
+            exception = None
+            try:
+                if response['status'] >= 300:
+                    error_data = response['body']
+                    raise Office365ClientError(response['status'], error_data)
+            except Office365ClientError as e:
+                exception = e
+
+            if callback is not None:
+                callback(request_id, response, exception)
 
 
 class SubscriptionService(BaseService):
