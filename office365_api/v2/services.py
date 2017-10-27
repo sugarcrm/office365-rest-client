@@ -168,7 +168,7 @@ class BatchService(BaseService):
     def execute(self):
         requests = []
         for request_id in self._order:
-            request = self._request[request_id]
+            request = self._requests[request_id]
             request['id'] = request_id
             requests.append(request)
 
