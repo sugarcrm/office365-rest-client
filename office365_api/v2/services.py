@@ -313,8 +313,11 @@ class EventService(BaseService):
         method = 'get'
         return self.execute_request(method, path, query_params=params)
 
-    def update(self, event_id, **kwargs):
-        path = '/calendar/events/' + event_id
+    def update(self, event_id, path=None, **kwargs):
+        if not path:
+            path = '/calendar/events/'
+        path += event_id
+
         method = 'patch'
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
