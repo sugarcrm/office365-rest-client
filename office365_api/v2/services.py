@@ -149,6 +149,7 @@ class BatchService(BaseService):
         self._order.append(request_id)
 
     def _execute(self, requests):
+        logger.info(requests)
         default_headers = {'Content-Type': 'application/json'}
         resp, content = oauth2client.transport.request(self.client.http,
                                                        self.batch_uri,
