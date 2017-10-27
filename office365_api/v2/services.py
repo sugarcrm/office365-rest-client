@@ -322,8 +322,11 @@ class EventService(BaseService):
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
-    def delete(self, event_id):
-        path = '/calendar/events/' + event_id
+    def delete(self, event_id, path=None):
+        if not path:
+            path = '/calendar/events/'
+        path += event_id
+
         method = 'delete'
         return self.execute_request(method, path)
 
