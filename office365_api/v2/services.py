@@ -147,10 +147,13 @@ class BatchService(BaseService):
         self._order.append(request_id)
 
     def _execute(self, requests):
+        method = 'POST'
         default_headers = {'Content-Type': 'application/json'}
+
+        logger.info('{}: {} with {}x requests'.format(method, self.batch_uri, len(requests)))
         resp, content = oauth2client.transport.request(self.client.http,
                                                        self.batch_uri,
-                                                       method='POST',
+                                                       method=method,
                                                        body=json.dumps({'requests': requests}),
                                                        headers=default_headers)
         if resp.status < 300:
