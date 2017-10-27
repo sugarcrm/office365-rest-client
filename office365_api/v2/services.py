@@ -104,7 +104,9 @@ class SubscriptionFactory(BaseFactory):
 
 
 class BatchService(BaseService):
-    def __init__(self, batch_uri=None):
+    def __init__(self, client, batch_uri=None):
+        self.client = client
+
         if not batch_uri:
             self.batch_uri = 'https://graph.microsoft.com/v1.0/$batch'
 

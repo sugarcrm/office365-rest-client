@@ -14,4 +14,4 @@ class MicrosoftGraphClient(object):
         self.subscription = SubscriptionFactory(self)()
 
     def new_batch_request(self):
-        return BatchService()
+        return BatchService(client=self)
