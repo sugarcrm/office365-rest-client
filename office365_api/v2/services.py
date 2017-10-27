@@ -147,7 +147,6 @@ class BatchService(BaseService):
         self._order.append(request_id)
 
     def _execute(self, requests):
-        logger.info(requests)
         default_headers = {'Content-Type': 'application/json'}
         resp, content = oauth2client.transport.request(self.client.http,
                                                        self.batch_uri,
@@ -174,10 +173,11 @@ class BatchService(BaseService):
             requests.append(request)
 
         responses = self._execute(requests)
+
+        # Map the responses to the request_ids
         for resp in responses['responses']:
             self._responses[resp['id']] = resp
 
-        logger.info(responses)
         # Process the callbacks
         for request_id in self._order:
             response = self._responses[request_id]
