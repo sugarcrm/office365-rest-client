@@ -308,8 +308,11 @@ class EventService(BaseService):
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
-    def get(self, event_id, params=None):
-        path = '/calendar/events/' + event_id
+    def get(self, event_id, params=None, path=None):
+        if not path:
+            path = '/calendar/events/'
+        path += event_id
+
         method = 'get'
         return self.execute_request(method, path, query_params=params)
 
