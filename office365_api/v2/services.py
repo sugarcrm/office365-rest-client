@@ -5,9 +5,7 @@ import urllib
 
 import oauth2client.transport
 
-from .exceptions import Office365ClientError
-from .exceptions import Office365ServerError
-
+from .exceptions import Office365ClientError, Office365ServerError
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +99,103 @@ class BaseFactory(object):
 class SubscriptionFactory(BaseFactory):
     def __call__(self):
         return SubscriptionService(self.client, '')
+
+
+class BatchService(BaseService):
+    def __init__(self, client, batch_uri=None):
+        self.client = client
+
+        if not batch_uri:
+            self.batch_uri = 'https://graph.microsoft.com/beta/$batch'
+
+        self._callbacks = {}
+
+        # A map from id to request.
+        self._requests = {}
+
+        # A map from id to callback.
+        self._callbacks = {}
+
+        # List of request ids, in the order in which they were added.
+        self._order = []
+
+        # The last auto generated id.
+        self._last_auto_id = 0
+
+        # A map from request id to (httplib2.Response, content) response pairs
+        self._responses = {}
+
+    def _new_id(self):
+        """
+        Create a new id.
+
+        Auto incrementing number that avoids conflicts with ids already used.
+        Returns:
+           string, a new unique id.
+
+        """
+        self._last_auto_id += 1
+        while str(self._last_auto_id) in self._requests:
+            self._last_auto_id += 1
+
+        return str(self._last_auto_id)
+
+    def add(self, request, callback=None):
+        request_id = self._new_id()
+        self._requests[request_id] = request
+        self._callbacks[request_id] = callback
+        self._order.append(request_id)
+
+    def _execute(self, requests):
+        method = 'POST'
+        default_headers = {'Content-Type': 'application/json'}
+
+        logger.info('{}: {} with {}x requests'.format(method, self.batch_uri, len(requests)))
+        resp, content = oauth2client.transport.request(self.client.http,
+                                                       self.batch_uri,
+                                                       method=method,
+                                                       body=json.dumps({'requests': requests}),
+                                                       headers=default_headers)
+        if resp.status < 300:
+            if content:
+                return json.loads(content)
+        elif resp.status < 500:
+            try:
+                error_data = json.loads(content)
+            except ValueError:
+                error_data = {'error': {'message': content, 'code': 'unknown'}}
+            raise Office365ClientError(resp.status, error_data)
+        else:
+            raise Office365ServerError(resp.status, content)
+
+    def execute(self):
+        requests = []
+        for request_id in self._order:
+            request = self._requests[request_id]
+            request['id'] = request_id
+            requests.append(request)
+
+        responses = self._execute(requests)
+
+        # Map the responses to the request_ids
+        for resp in responses['responses']:
+            self._responses[resp['id']] = resp
+
+        # Process the callbacks
+        for request_id in self._order:
+            response = self._responses[request_id]
+            request = self._requests[request_id]
+            callback = self._callbacks[request_id]
+            exception = None
+            try:
+                if response['status'] >= 300:
+                    error_data = response['body']
+                    raise Office365ClientError(response['status'], error_data)
+            except Office365ClientError as e:
+                exception = e
+
+            if callback is not None:
+                callback(request_id, response['body'], exception)
 
 
 class SubscriptionService(BaseService):
@@ -213,19 +308,28 @@ class EventService(BaseService):
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
-    def get(self, event_id, params=None):
-        path = '/calendar/events/' + event_id
+    def get(self, event_id, params=None, path=None):
+        if not path:
+            path = '/calendar/events/'
+        path += event_id
+
         method = 'get'
         return self.execute_request(method, path, query_params=params)
 
-    def update(self, event_id, **kwargs):
-        path = '/calendar/events/' + event_id
+    def update(self, event_id, path=None, **kwargs):
+        if not path:
+            path = '/calendar/events/'
+        path += event_id
+
         method = 'patch'
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
-    def delete(self, event_id):
-        path = '/calendar/events/' + event_id
+    def delete(self, event_id, path=None):
+        if not path:
+            path = '/calendar/events/'
+        path += event_id
+
         method = 'delete'
         return self.execute_request(method, path)
 

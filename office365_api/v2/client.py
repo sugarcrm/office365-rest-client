@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib2
-from .services import UserServicesFactory, SubscriptionFactory
+from .services import UserServicesFactory, SubscriptionFactory, BatchService
 
 
 class MicrosoftGraphClient(object):
@@ -12,3 +12,6 @@ class MicrosoftGraphClient(object):
         self.users = UserServicesFactory(self)
         self.me = self.users('me')
         self.subscription = SubscriptionFactory(self)()
+
+    def new_batch_request(self):
+        return BatchService(client=self)
