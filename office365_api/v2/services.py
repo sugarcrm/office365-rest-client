@@ -593,9 +593,11 @@ class MailFolderService(BaseService):
         headers = {
             'Prefer': 'odata.maxpagesize=%d' % max_entries
         }
-        query_params = {
-            '$deltaToken': delta_token,
-        }
+        if delta_token:
+            query_params = {
+                '$deltaToken': delta_token,
+            }
+
         resp = self.execute_request(method, path,
                                     query_params=query_params, headers=headers)
         next_link = resp.get('@odata.nextLink')
