@@ -593,6 +593,7 @@ class MailFolderService(BaseService):
         headers = {
             'Prefer': 'odata.maxpagesize=%d' % max_entries
         }
+        query_params = {}
         if delta_token:
             query_params = {
                 '$deltaToken': delta_token,
