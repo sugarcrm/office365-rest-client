@@ -389,32 +389,6 @@ class MessageService(BaseService):
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
-    def delta_list(self, start_datetime=None, end_datetime=None, delta_token=None, max_entries=50):
-        """
-        Support tracking of changes in the calendarview.
-
-        https://developer.microsoft.com/en-us/graph/docs/concepts/delta_query_overview
-        """
-        path = '/messages/delta'
-
-        method = 'get'
-        headers = {
-            'Prefer': 'odata.maxpagesize=%d' % max_entries
-        }
-        if not delta_token:
-            query_params = {
-                'startDateTime': start_datetime,
-                'endDateTime': end_datetime,
-            }
-        else:
-            query_params = {
-                '$deltaToken': delta_token,
-            }
-        resp = self.execute_request(method, path,
-                                    query_params=query_params, headers=headers)
-        next_link = resp.get('@odata.nextLink')
-        return resp, next_link
-
     def get(self, message_id, _filter=None):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages ."""
         path = '/messages/{}'.format(message_id)
