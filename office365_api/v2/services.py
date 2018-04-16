@@ -555,7 +555,7 @@ class MailFolderService(BaseService):
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
-    def delta_list(self, folder_id, delta_token=None, max_entries=50):
+    def delta_list(self, folder_id, delta_token=None, _filter=None, max_entries=50):
         """
         Support tracking of changes in the mailFolders.
 
@@ -572,6 +572,8 @@ class MailFolderService(BaseService):
             query_params = {
                 '$deltaToken': delta_token,
             }
+        if _filter:
+            query_params.update({'$filter':_filter})
 
         resp = self.execute_request(method, path,
                                     query_params=query_params, headers=headers)
