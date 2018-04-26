@@ -436,6 +436,7 @@ class MessageService(BaseService):
         return self.execute_request(method, path, body=body)
 
 
+
 class AttachmentService(BaseService):
     def list(self, message_id, _filter=None):
         path = '/messages/{}/attachments'.format(message_id)
@@ -551,6 +552,31 @@ class MailFolderService(BaseService):
         path = '/mailFolders'
         method = 'get'
         resp = self.execute_request(method, path)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
+
+    def delta_list(self, folder_id, delta_token=None, _filter=None, max_entries=50):
+        """
+        Support tracking of changes in the mailFolders.
+
+        https://developer.microsoft.com/en-us/graph/docs/concepts/delta_query_overview
+        """
+        path = '/mailFolders/{}/messages/delta'.format(folder_id)
+
+        method = 'get'
+        headers = {
+            'Prefer': 'odata.maxpagesize=%d' % max_entries
+        }
+        query_params = {}
+        if delta_token:
+            query_params = {
+                '$deltaToken': delta_token,
+            }
+        if _filter:
+            query_params.update({'$filter':_filter})
+
+        resp = self.execute_request(method, path,
+                                    query_params=query_params, headers=headers)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
