@@ -343,7 +343,9 @@ class CalendarViewService(BaseService):
             'startDateTime': start_datetime,
             'endDateTime': end_datetime,
         }
-        return self.execute_request(method, path, query_params=query_params)
+        resp = self.execute_request(method, path, query_params=query_params)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link        
 
     def delta_list(self, start_datetime=None, end_datetime=None, delta_token=None, max_entries=50, calendar_id=None):
         """
