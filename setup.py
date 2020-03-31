@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='office365-rest-client',
-      version='0.0.2',
+      version='0.0.3',
       description='Python api wrapper for Office365 API v1.0',
       url='https://bitbucket.org/collabspot/office365-rest-client',
       author='Collabspot',
