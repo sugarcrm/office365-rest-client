@@ -25,12 +25,15 @@ class BaseService(object):
             path = path.lstrip('/')
         return '%s/%s/%s/%s' % (self.base_url, self.graph_api_version, self.prefix, path)
 
-    def follow_next_link(self, next_link):
+    def follow_next_link(self, next_link, max_entries=DEFAULT_MAX_ENTRIES):
         """Simply execute the request for next_link."""
         # remove the prefix, as we only need the relative path
         full_prefix = '%s/%s/%s' % (self.base_url, self.graph_api_version, self.prefix)
         _, _, path = next_link.partition(full_prefix)
-        resp = self.execute_request('get', path)
+        headers = {
+            'Prefer': 'odata.maxpagesize=%d' % max_entries
+        }
+        resp = self.execute_request('get', path, headers=headers)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
