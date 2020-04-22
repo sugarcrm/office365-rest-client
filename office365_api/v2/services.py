@@ -9,6 +9,8 @@ from .exceptions import Office365ClientError, Office365ServerError
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_MAX_ENTRIES=50
+
 
 class BaseService(object):
     base_url = 'https://graph.microsoft.com'
@@ -240,12 +242,15 @@ class UserService(BaseService):
 
 
 class CalendarService(BaseService):
-    def list(self):
+    def list(self, max_entries=DEFAULT_MAX_ENTRIES):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendars."""
         # TODO: handle pagination
         path = '/calendars'
         method = 'get'
-        resp = self.execute_request(method, path)
+        query_params = {
+            "$top": max_entries
+        }
+        resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
@@ -290,7 +295,7 @@ class EventService(BaseService):
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
-    def list(self, calendar_id=None, _filter=''):
+    def list(self, calendar_id=None, _filter='', max_entries=DEFAULT_MAX_ENTRIES):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/calendar_list_events ."""
         if calendar_id:
             # create in specific calendar
@@ -299,11 +304,12 @@ class EventService(BaseService):
             # create in default calendar
             path = '/calendar/events'
         method = 'get'
-        query_params = None
+        query_params = {
+            "$top": max_entries
+        }
         if _filter:
-            query_params = {
-                '$filter': _filter
-            }
+            query_params['$filter'] =_filter
+
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
@@ -335,19 +341,20 @@ class EventService(BaseService):
 
 
 class CalendarViewService(BaseService):
-    def list(self, start_datetime, end_datetime):
+    def list(self, start_datetime, end_datetime, max_entries=DEFAULT_MAX_ENTRIES):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendarview."""
         path = '/calendarView'
         method = 'get'
         query_params = {
             'startDateTime': start_datetime,
             'endDateTime': end_datetime,
+            '$top': max_entries
         }
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
-        return resp, next_link        
+        return resp, next_link
 
-    def delta_list(self, start_datetime=None, end_datetime=None, delta_token=None, max_entries=50, calendar_id=None):
+    def delta_list(self, start_datetime=None, end_datetime=None, delta_token=None, calendar_id=None):
         """
         Support tracking of changes in the calendarview.
 
@@ -359,9 +366,6 @@ class CalendarViewService(BaseService):
         path += '/calendarView/delta'
 
         method = 'get'
-        headers = {
-            'Prefer': 'odata.maxpagesize=%d' % max_entries
-        }
         if not delta_token:
             query_params = {
                 'startDateTime': start_datetime,
@@ -371,22 +375,22 @@ class CalendarViewService(BaseService):
             query_params = {
                 '$deltaToken': delta_token,
             }
-        resp = self.execute_request(method, path,
-                                    query_params=query_params, headers=headers)
+        resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
 
 class MessageService(BaseService):
-    def list(self, _filter=None):
+    def list(self, _filter=None, max_entries=DEFAULT_MAX_ENTRIES):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages ."""
         path = '/messages'
         method = 'get'
-        query_params = None
+        query_params = {
+            "$top": max_entries
+        }
         if _filter:
-            query_params = {
-                '$filter': _filter
-            }
+            query_params['$filter'] =_filter
+
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
@@ -440,28 +444,22 @@ class MessageService(BaseService):
 
 
 class AttachmentService(BaseService):
-    def list(self, message_id, _filter=None):
+    def list(self, message_id, _filter=None, max_entries=DEFAULT_MAX_ENTRIES):
         path = '/messages/{}/attachments'.format(message_id)
         method = 'get'
-        query_params = None
+        query_params = {
+            "$top": max_entries
+        }
         if _filter:
-            query_params = {
-                '$filter': _filter
-            }
+            query_params['$filter'] =_filter
+
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
     def list_first_page(self, message_id, _filter=None):
         # backwards compatibility
-        path = '/messages/{}/attachments'.format(message_id)
-        method = 'get'
-        query_params = None
-        if _filter:
-            query_params = {
-                '$filter': _filter
-            }
-        resp = self.execute_request(method, path, query_params=query_params)
+        resp, _ = self.list(message_id, _filter)
         return resp
 
     def get(self, message_id, attachment_id):
@@ -478,10 +476,13 @@ class AttachmentService(BaseService):
 
 
 class ContactFolderService(BaseService):
-    def list(self):
+    def list(self, max_entries=DEFAULT_MAX_ENTRIES):
         path = '/contactFolders'
         method = 'get'
-        resp = self.execute_request(method, path)
+        query_params = {
+            '$top': max_entries
+        }
+        resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
@@ -509,7 +510,7 @@ class ContactService(BaseService):
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
-    def list(self, contact_folder_id=None, _filter=''):
+    def list(self, contact_folder_id=None, _filter='', max_entries=DEFAULT_MAX_ENTRIES):
         if contact_folder_id:
             # list in specific folder
             path = '/contactFolders/' + contact_folder_id + '/contacts'
@@ -517,11 +518,12 @@ class ContactService(BaseService):
             # create in default calendar
             path = '/contacts'
         method = 'get'
-        query_params = None
+        query_params = {
+            "$top": max_entries
+        }
         if _filter:
-            query_params = {
-                '$filter': _filter
-            }
+            query_params['$filter'] =_filter
+
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
@@ -550,14 +552,15 @@ class MailFolderService(BaseService):
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
-    def list(self):
+    def list(self, max_entries=DEFAULT_MAX_ENTRIES):
         path = '/mailFolders'
         method = 'get'
-        resp = self.execute_request(method, path)
+        query_params = {'$top': max_entries}
+        resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
-    def delta_list(self, folder_id, delta_token=None, _filter=None, max_entries=50):
+    def delta_list(self, folder_id, delta_token=None, _filter=None):
         """
         Support tracking of changes in the mailFolders.
 
@@ -566,9 +569,6 @@ class MailFolderService(BaseService):
         path = '/mailFolders/{}/messages/delta'.format(folder_id)
 
         method = 'get'
-        headers = {
-            'Prefer': 'odata.maxpagesize=%d' % max_entries
-        }
         query_params = {}
         if delta_token:
             query_params = {
@@ -577,8 +577,7 @@ class MailFolderService(BaseService):
         if _filter:
             query_params.update({'$filter':_filter})
 
-        resp = self.execute_request(method, path,
-                                    query_params=query_params, headers=headers)
+        resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
@@ -587,10 +586,11 @@ class MailFolderService(BaseService):
         method = 'get'
         return self.execute_request(method, path)
 
-    def list_childfolders(self, folder_id):
+    def list_childfolders(self, folder_id, max_entries=DEFAULT_MAX_ENTRIES):
         path = '/mailFolders/' + folder_id + '/childFolders'
         method = 'get'
-        resp = self.execute_request(method, path)
+        query_params = {'$top': max_entries}
+        resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
