@@ -366,9 +366,10 @@ class CalendarViewService(BaseService):
         path += '/calendarView/delta'
 
         method = 'get'
-        query_params = {
-            "$top": max_entries
+        headers = {
+            'Prefer': 'odata.maxpagesize=%d' % max_entries
         }
+        query_params = {}
         if not delta_token:
             query_params.update({
                 'startDateTime': start_datetime,
@@ -379,7 +380,7 @@ class CalendarViewService(BaseService):
                 '$deltaToken': delta_token,
             })
 
-        resp = self.execute_request(method, path, query_params=query_params)
+        resp = self.execute_request(method, path, query_params=query_params, headers=headers)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
@@ -573,16 +574,17 @@ class MailFolderService(BaseService):
         path = '/mailFolders/{}/messages/delta'.format(folder_id)
 
         method = 'get'
-        query_params = {
-            "$top": max_entries
+        headers = {
+            'Prefer': 'odata.maxpagesize=%d' % max_entries
         }
+        query_params = {}
         if delta_token:
             query_params.update({'$deltaToken': delta_token})
 
         if _filter:
             query_params.update({'$filter':_filter})
 
-        resp = self.execute_request(method, path, query_params=query_params)
+        resp = self.execute_request(method, path, query_params=query_params, headers=headers)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
