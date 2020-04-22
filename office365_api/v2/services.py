@@ -354,7 +354,7 @@ class CalendarViewService(BaseService):
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
-    def delta_list(self, start_datetime=None, end_datetime=None, delta_token=None, calendar_id=None):
+    def delta_list(self, start_datetime=None, end_datetime=None, delta_token=None, calendar_id=None, max_entries=DEFAULT_MAX_ENTRIES):
         """
         Support tracking of changes in the calendarview.
 
@@ -366,15 +366,19 @@ class CalendarViewService(BaseService):
         path += '/calendarView/delta'
 
         method = 'get'
+        query_params = {
+            "$top": max_entries
+        }
         if not delta_token:
-            query_params = {
+            query_params.update({
                 'startDateTime': start_datetime,
                 'endDateTime': end_datetime,
-            }
+            })
         else:
-            query_params = {
+            query_params.update({
                 '$deltaToken': delta_token,
-            }
+            })
+
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
@@ -560,7 +564,7 @@ class MailFolderService(BaseService):
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
-    def delta_list(self, folder_id, delta_token=None, _filter=None):
+    def delta_list(self, folder_id, delta_token=None, _filter=None, max_entries=DEFAULT_MAX_ENTRIES):
         """
         Support tracking of changes in the mailFolders.
 
@@ -569,11 +573,12 @@ class MailFolderService(BaseService):
         path = '/mailFolders/{}/messages/delta'.format(folder_id)
 
         method = 'get'
-        query_params = {}
+        query_params = {
+            "$top": max_entries
+        }
         if delta_token:
-            query_params = {
-                '$deltaToken': delta_token,
-            }
+            query_params.update({'$deltaToken': delta_token})
+
         if _filter:
             query_params.update({'$filter':_filter})
 
