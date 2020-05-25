@@ -1,5 +1,5 @@
 import json
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 
 """
@@ -32,7 +32,7 @@ def become_request(self, method, path, query_params=None, headers=None, body=Non
 
     url = path
     if query_params:
-        qs = urllib.urlencode(query_params)
+        qs = urllib.parse.urlencode(query_params)
         url += '?' + qs
 
     request.update({'url': url})

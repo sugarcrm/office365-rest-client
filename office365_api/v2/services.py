@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 import oauth2client.transport
 
@@ -49,7 +49,7 @@ class BaseService(object):
         """
         full_url = self.build_url(path)
         if query_params:
-            querystring = urllib.urlencode(query_params)
+            querystring = urllib.parse.urlencode(query_params)
             full_url += '?' + querystring
 
         default_headers = {
