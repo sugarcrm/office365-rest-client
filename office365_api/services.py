@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
-import urlparse
+import urllib.parse
 
 import oauth2client.transport
 
@@ -47,7 +47,7 @@ class BaseAPIService(BaseService):
             result.extend(response['value'])
             next_link = response.get('@odata.nextLink')
             delta_link = response.get('@odata.deltaLink', '')
-            delta_link_qs = urlparse.parse_qs(urlparse.urlparse(delta_link).query)
+            delta_link_qs = urllib.parse.parse_qs(urllib.parse.urlparse(delta_link).query)
             if not next_link and (delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')):
                 delta_token_qs = delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')
                 delta_token = delta_token_qs[0] if delta_token_qs else ''
