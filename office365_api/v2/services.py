@@ -391,7 +391,7 @@ class CalendarViewService(BaseService):
 
 
 class MessageService(BaseService):
-    def list(self, _filter=None, max_entries=DEFAULT_MAX_ENTRIES):
+    def list(self, _filter=None, _search=None, max_entries=DEFAULT_MAX_ENTRIES):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages ."""
         path = '/messages'
         method = 'get'
@@ -399,7 +399,10 @@ class MessageService(BaseService):
             "$top": max_entries
         }
         if _filter:
-            query_params['$filter'] =_filter
+            query_params['$filter'] = _filter
+
+        if _search:
+            query_params['$search'] = _search
 
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
