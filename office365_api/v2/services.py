@@ -245,7 +245,7 @@ class UserService(BaseService):
 
 
 class CalendarService(BaseService):
-    def list(self, max_entries=DEFAULT_MAX_ENTRIES):
+    def list(self, _filter='', max_entries=DEFAULT_MAX_ENTRIES):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendars."""
         # TODO: handle pagination
         path = '/calendars'
@@ -253,6 +253,8 @@ class CalendarService(BaseService):
         query_params = {
             "$top": max_entries
         }
+        if _filter:
+            query_params['$filter'] =_filter
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
