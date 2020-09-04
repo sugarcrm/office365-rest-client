@@ -83,7 +83,6 @@ class ServicesCollection(object):
     def __init__(self, client, prefix):
         self.client = client
         self.prefix = prefix
-
         self.calendar = CalendarService(self.client, self.prefix)
         self.calendarview = CalendarViewService(self.client, self.prefix)
         self.event = EventService(self.client, self.prefix)
@@ -92,8 +91,8 @@ class ServicesCollection(object):
         self.contactfolder = ContactFolderService(self.client, self.prefix)
         self.contact = ContactService(self.client, self.prefix)
         self.mailfolder = MailFolderService(self.client, self.prefix)
-
         self.user = UserService(self.client, self.prefix)
+        self.mailboxSettings = MailboxSettingsService(self.client, self.prefix);
 
 
 class BaseFactory(object):
@@ -242,7 +241,6 @@ class UserService(BaseService):
         method = 'get'
         resp = self.execute_request(method, path)
         return resp
-
 
 class CalendarService(BaseService):
     def list(self, _filter='', max_entries=DEFAULT_MAX_ENTRIES):
@@ -614,3 +612,11 @@ class MailFolderService(BaseService):
         method = 'post'
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
+
+class MailboxSettingsService(BaseService):
+    def get(self):
+        """https://docs.microsoft.com/en-us/graph/api/user-get-mailboxsettings"""
+        path = '/mailboxSettings'
+        method = 'get'
+        resp = self.execute_request(method, path)
+        return resp
