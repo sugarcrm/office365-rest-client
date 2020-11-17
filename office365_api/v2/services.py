@@ -10,6 +10,7 @@ from .exceptions import Office365ClientError, Office365ServerError
 logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_ENTRIES=50
+RETRIES_COUNT=2
 
 
 class BaseService(object):
@@ -59,11 +60,20 @@ class BaseService(object):
             default_headers.update(headers)
 
         logger.info('{}: {}'.format(method.upper(), full_url))
-        resp, content = oauth2client.transport.request(self.client.http,
-                                                       full_url,
-                                                       method=method.upper(),
-                                                       body=body,
-                                                       headers=default_headers)
+        retries = RETRIES_COUNT
+        while True:
+            try:
+                resp, content = oauth2client.transport.request(self.client.http,
+                                                            full_url,
+                                                            method=method.upper(),
+                                                            body=body,
+                                                            headers=default_headers)
+                break
+            except ConnectionResetError:
+                retries -= 1
+                if retries == 0:
+                    raise
+
         if resp.status < 300:
             if content:
                 return json.loads(content)
