@@ -354,7 +354,7 @@ class EventService(BaseService):
 
 
 class CalendarViewService(BaseService):
-    def list(self, start_datetime, end_datetime, max_entries=DEFAULT_MAX_ENTRIES):
+    def list(self, start_datetime, end_datetime, max_entries=DEFAULT_MAX_ENTRIES, _filter=''):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendarview."""
         path = '/calendarView'
         method = 'get'
@@ -363,11 +363,13 @@ class CalendarViewService(BaseService):
             'endDateTime': end_datetime,
             '$top': max_entries
         }
+        if _filter:
+            query_params['$filter'] =_filter
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
-    def delta_list(self, start_datetime=None, end_datetime=None, delta_token=None, calendar_id=None, max_entries=DEFAULT_MAX_ENTRIES):
+    def delta_list(self, start_datetime=None, end_datetime=None, delta_token=None, calendar_id=None, max_entries=DEFAULT_MAX_ENTRIES, _filter=''):
         """
         Support tracking of changes in the calendarview.
 
@@ -392,7 +394,8 @@ class CalendarViewService(BaseService):
             query_params.update({
                 '$deltaToken': delta_token,
             })
-
+        if _filter:
+            query_params['$filter'] =_filter
         resp = self.execute_request(method, path, query_params=query_params, headers=headers)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
