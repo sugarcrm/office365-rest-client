@@ -491,6 +491,11 @@ class AttachmentService(BaseService):
         path = '/messages/{}/attachments/{}'.format(message_id, attachment_id)
         method = 'get'
         return self.execute_request(method, path)
+    
+    def get_content(self, message_id, attachment_id):
+        path = '/messages/{}/attachments/{}/$value'.format(message_id, attachment_id)
+        method = 'get'
+        return self.execute_request(method, path)
 
     def create(self, message_id, **kwargs):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/message_post_attachments ."""
