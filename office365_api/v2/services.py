@@ -55,7 +55,10 @@ class BaseService(object):
 
         default_headers = {
             'Content-Type': 'application/json'
+        } if parse_json_result else {
+            'Content-Type': 'text/html'
         }
+
         if headers:
             default_headers.update(headers)
 
@@ -76,7 +79,7 @@ class BaseService(object):
 
         if resp.status < 300:
             if content:
-                return json.loads(content)
+                return json.loads(content) if parse_json_result else content
         elif resp.status < 500:
             try:
                 error_data = json.loads(content)
@@ -495,7 +498,7 @@ class AttachmentService(BaseService):
     def get_content(self, message_id, attachment_id):
         path = '/messages/{}/attachments/{}/$value'.format(message_id, attachment_id)
         method = 'get'
-        return self.execute_request(method, path)
+        return self.execute_request(method, path, parse_json_result=False)
 
     def create(self, message_id, **kwargs):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/message_post_attachments ."""
