@@ -1,4 +1,7 @@
 # -* -coding: utf-8 -*-
+import json
+
+
 class Office365ClientError(Exception):
 
     def __init__(self, status_code, data):
@@ -28,7 +31,20 @@ class Office365ClientError(Exception):
 
 
 class Office365ServerError(Exception):
+    
     def __init__(self, status_code, body):
-        super(Office365ServerError, self).__init__('{}: {}'.format(status_code, body))
+        super(Office365ServerError, self).__init__(
+            '{}: {}'.format(status_code, body))
         self.status_code = status_code
+        try:
+            data = json.loads(body)
+            self.error_code = data['error']['code']
+        except:
+            self.error_code = ''
+
         self.error_message = body
+
+    @property
+    def is_response_timeout(self):
+        # request takes too long to complete
+        return self.status_code in [503, 504] and self.error_code == 'UnknownError'
