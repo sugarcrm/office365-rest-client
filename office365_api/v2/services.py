@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
-import urllib.request, urllib.parse, urllib.error
+import urllib.request
+import urllib.parse
+import urllib.error
 
 import oauth2client.transport
 
@@ -9,8 +11,8 @@ from .exceptions import Office365ClientError, Office365ServerError
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MAX_ENTRIES=50
-RETRIES_COUNT=2
+DEFAULT_MAX_ENTRIES = 50
+RETRIES_COUNT = 2
 
 
 class BaseService(object):
@@ -26,15 +28,16 @@ class BaseService(object):
             path = path.lstrip('/')
         return '%s/%s/%s/%s' % (self.base_url, self.graph_api_version, self.prefix, path)
 
-    def follow_next_link(self, next_link, max_entries=DEFAULT_MAX_ENTRIES):
+    def follow_next_link(self, next_link, max_entries=DEFAULT_MAX_ENTRIES, fields=[]):
         """Simply execute the request for next_link."""
         # remove the prefix, as we only need the relative path
-        full_prefix = '%s/%s/%s' % (self.base_url, self.graph_api_version, self.prefix)
+        full_prefix = '%s/%s/%s' % (self.base_url,
+                                    self.graph_api_version, self.prefix)
         _, _, path = next_link.partition(full_prefix)
-        headers = {
-            'Prefer': 'odata.maxpagesize=%d' % max_entries
-        }
-        resp = self.execute_request('get', path, headers=headers)
+        headers = {'Prefer': 'odata.maxpagesize=%d' % max_entries}
+        query_params = {"$select": ','.join(fields)} if fields else None
+        resp = self.execute_request(
+            'get', path, query_params=query_params, headers=headers)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
@@ -67,10 +70,10 @@ class BaseService(object):
         while True:
             try:
                 resp, content = oauth2client.transport.request(self.client.http,
-                                                            full_url,
-                                                            method=method.upper(),
-                                                            body=body,
-                                                            headers=default_headers)
+                                                               full_url,
+                                                               method=method.upper(),
+                                                               body=body,
+                                                               headers=default_headers)
                 break
             except ConnectionResetError:
                 retries -= 1
@@ -105,7 +108,7 @@ class ServicesCollection(object):
         self.contact = ContactService(self.client, self.prefix)
         self.mailfolder = MailFolderService(self.client, self.prefix)
         self.user = UserService(self.client, self.prefix)
-        self.mailboxSettings = MailboxSettingsService(self.client, self.prefix);
+        self.mailboxSettings = MailboxSettingsService(self.client, self.prefix)
 
 
 class BaseFactory(object):
@@ -167,11 +170,13 @@ class BatchService(BaseService):
         method = 'POST'
         default_headers = {'Content-Type': 'application/json'}
 
-        logger.info('{}: {} with {}x requests'.format(method, self.batch_uri, len(requests)))
+        logger.info('{}: {} with {}x requests'.format(
+            method, self.batch_uri, len(requests)))
         resp, content = oauth2client.transport.request(self.client.http,
                                                        self.batch_uri,
                                                        method=method,
-                                                       body=json.dumps({'requests': requests}),
+                                                       body=json.dumps(
+                                                           {'requests': requests}),
                                                        headers=default_headers)
         if resp.status < 300:
             if content:
@@ -255,6 +260,7 @@ class UserService(BaseService):
         resp = self.execute_request(method, path)
         return resp
 
+
 class CalendarService(BaseService):
     def list(self, _filter='', max_entries=DEFAULT_MAX_ENTRIES):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendars."""
@@ -265,7 +271,7 @@ class CalendarService(BaseService):
             "$top": max_entries
         }
         if _filter:
-            query_params['$filter'] =_filter
+            query_params['$filter'] = _filter
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
@@ -324,7 +330,7 @@ class EventService(BaseService):
             "$top": max_entries
         }
         if _filter:
-            query_params['$filter'] =_filter
+            query_params['$filter'] = _filter
 
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
@@ -370,7 +376,7 @@ class CalendarViewService(BaseService):
             '$top': max_entries
         }
         if _filter:
-            query_params['$filter'] =_filter
+            query_params['$filter'] = _filter
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
@@ -400,13 +406,14 @@ class CalendarViewService(BaseService):
             query_params.update({
                 '$deltaToken': delta_token,
             })
-        resp = self.execute_request(method, path, query_params=query_params, headers=headers)
+        resp = self.execute_request(
+            method, path, query_params=query_params, headers=headers)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
 
 class MessageService(BaseService):
-    def list(self, _filter=None, _search=None, max_entries=DEFAULT_MAX_ENTRIES):
+    def list(self, _filter=None, _search=None, max_entries=DEFAULT_MAX_ENTRIES, fields=[]):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages ."""
         path = '/messages'
         method = 'get'
@@ -418,6 +425,9 @@ class MessageService(BaseService):
 
         if _search:
             query_params['$search'] = _search
+
+        if fields:
+            query_params['$select'] = ','.join(fields)
 
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
@@ -470,7 +480,6 @@ class MessageService(BaseService):
         return self.execute_request(method, path, body=body)
 
 
-
 class AttachmentService(BaseService):
     def list(self, message_id, _filter=None, max_entries=DEFAULT_MAX_ENTRIES):
         path = '/messages/{}/attachments'.format(message_id)
@@ -479,7 +488,7 @@ class AttachmentService(BaseService):
             "$top": max_entries
         }
         if _filter:
-            query_params['$filter'] =_filter
+            query_params['$filter'] = _filter
 
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
@@ -494,9 +503,10 @@ class AttachmentService(BaseService):
         path = '/messages/{}/attachments/{}'.format(message_id, attachment_id)
         method = 'get'
         return self.execute_request(method, path)
-    
+
     def get_content(self, message_id, attachment_id):
-        path = '/messages/{}/attachments/{}/$value'.format(message_id, attachment_id)
+        path = '/messages/{}/attachments/{}/$value'.format(
+            message_id, attachment_id)
         method = 'get'
         return self.execute_request(method, path, parse_json_result=False)
 
@@ -555,7 +565,7 @@ class ContactService(BaseService):
             "$top": max_entries
         }
         if _filter:
-            query_params['$filter'] =_filter
+            query_params['$filter'] = _filter
 
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
@@ -593,7 +603,7 @@ class MailFolderService(BaseService):
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
-    def delta_list(self, folder_id, delta_token=None, _filter=None, max_entries=DEFAULT_MAX_ENTRIES):
+    def delta_list(self, folder_id, delta_token=None, _filter=None, max_entries=DEFAULT_MAX_ENTRIES, fields=[]):
         """
         Support tracking of changes in the mailFolders.
 
@@ -610,9 +620,13 @@ class MailFolderService(BaseService):
             query_params.update({'$deltaToken': delta_token})
 
         if _filter:
-            query_params.update({'$filter':_filter})
+            query_params.update({'$filter': _filter})
 
-        resp = self.execute_request(method, path, query_params=query_params, headers=headers)
+        if fields:
+            query_params.update({'$select': ','.join(fields)})
+
+        resp = self.execute_request(
+            method, path, query_params=query_params, headers=headers)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
@@ -634,6 +648,7 @@ class MailFolderService(BaseService):
         method = 'post'
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
+
 
 class MailboxSettingsService(BaseService):
     def get(self):
