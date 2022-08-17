@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+from typing import Any, Dict, List, Tuple
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -539,6 +540,22 @@ class ContactFolderService(BaseService):
         method = 'post'
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
+
+    def delta_list(self, folder_id: str = 'contacts', fields: List[str] = [], delta_token: str = None) -> Tuple[Dict[str, Any], str]:
+        path = f"/contactFolders('{folder_id}')/contacts/delta"
+        method = 'get'
+        query_params = None
+        if delta_token:  # If delta token is given we don't need other query params
+            query_params = {
+                '$deltatoken': delta_token
+            }
+        elif fields:
+            query_params = {
+                '$select': ','.join(fields)
+            }
+        resp = self.execute_request(method, path, query_params=query_params)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
 
 
 class ContactService(BaseService):
