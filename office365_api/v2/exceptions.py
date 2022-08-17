@@ -25,6 +25,10 @@ class Office365ClientError(Exception):
         # The refresh_token has expired. Ask to re-login
         return self.status_code == 400
 
+    @property
+    def is_expired_sync_token(self):
+        return (self.error_code or '').lower() == 'syncstatenotfound'
+
     def __repr__(self):
         return '<{0}>: {1} {2} ({3})'.format(
             'Office365ClientError', self.status_code, self.error_code, self.error_message)
