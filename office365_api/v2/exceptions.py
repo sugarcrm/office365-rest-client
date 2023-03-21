@@ -12,18 +12,22 @@ class Office365ClientError(Exception):
         self.error_message = data['error']['message']
 
     @property
-    def is_not_found(self):
-        return self.status_code == 404
+    def is_invalid_tokens(self):
+        # The refresh_token has expired. Ask to re-login
+        return self.status_code == 400
 
     @property
     def is_invalid_session(self):
         # Need to use refresh_token
         return self.status_code == 401
+    
+    @property
+    def is_forbidden(self):
+        return self.status_code == 403
 
     @property
-    def is_invalid_tokens(self):
-        # The refresh_token has expired. Ask to re-login
-        return self.status_code == 400
+    def is_not_found(self):
+        return self.status_code == 404
 
     @property
     def is_expired_sync_token(self):
