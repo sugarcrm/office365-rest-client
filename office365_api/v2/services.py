@@ -15,10 +15,14 @@ logger = logging.getLogger(__name__)
 DEFAULT_MAX_ENTRIES = 50
 RETRIES_COUNT = 2
 
+RESPONSE_FORMAT_ODATA = 'odata'
+RESPONSE_FORMAT_RAW = 'raw'
 
 class BaseService(object):
     base_url = 'https://graph.microsoft.com'
     graph_api_version = 'v1.0'
+    supported_response_formats = [RESPONSE_FORMAT_ODATA, RESPONSE_FORMAT_RAW]
+     
 
     def __init__(self, client, prefix):
         self.client = client
@@ -414,6 +418,7 @@ class CalendarViewService(BaseService):
 
 
 class MessageService(BaseService):
+
     def list(self, _filter=None, _search=None, max_entries=DEFAULT_MAX_ENTRIES, fields=[]):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages ."""
         path = '/messages'
@@ -434,11 +439,20 @@ class MessageService(BaseService):
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
-    def get(self, message_id, _filter=None):
+    def get(self, message_id, _filter=None, format=RESPONSE_FORMAT_ODATA):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages ."""
-        path = '/messages/{}'.format(message_id)
+        if format not in self.supported_response_formats:
+            raise ValueError(format)
+        
+        if format == RESPONSE_FORMAT_ODATA:
+            path = '/messages/{}'.format(message_id)
+        elif format == RESPONSE_FORMAT_RAW:
+            path = '/messages/{}/$value'.format(message_id)
+        else:
+            raise NotImplementedError(format)
+
         method = 'get'
-        return self.execute_request(method, path, query_params=_filter)
+        return self.execute_request(method, path, query_params=_filter, parse_json_result=(not format == RESPONSE_FORMAT_RAW))
 
     def create(self, **kwargs):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_post_messages ."""
@@ -482,7 +496,7 @@ class MessageService(BaseService):
 
 
 class AttachmentService(BaseService):
-    def list(self, message_id, _filter=None, max_entries=DEFAULT_MAX_ENTRIES):
+    def list(self, message_id, _filter=None, fields=[], max_entries=DEFAULT_MAX_ENTRIES):
         path = '/messages/{}/attachments'.format(message_id)
         method = 'get'
         query_params = {
@@ -490,14 +504,16 @@ class AttachmentService(BaseService):
         }
         if _filter:
             query_params['$filter'] = _filter
+        if fields:
+            query_params['$select'] = ','.join(fields)
 
         resp = self.execute_request(method, path, query_params=query_params)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
-    def list_first_page(self, message_id, _filter=None):
+    def list_first_page(self, message_id, _filter=None, fields=[]):
         # backwards compatibility
-        resp, _ = self.list(message_id, _filter)
+        resp, _ = self.list(message_id, _filter, fields)
         return resp
 
     def get(self, message_id, attachment_id):
