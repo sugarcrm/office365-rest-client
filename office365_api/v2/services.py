@@ -22,7 +22,7 @@ class BaseService(object):
     base_url = 'https://graph.microsoft.com'
     graph_api_version = 'v1.0'
     supported_response_formats = [RESPONSE_FORMAT_ODATA, RESPONSE_FORMAT_RAW]
-     
+
 
     def __init__(self, client, prefix):
         self.client = client
@@ -47,7 +47,7 @@ class BaseService(object):
         return resp, next_link
 
     def execute_request(self, method, path, query_params=None, headers=None, body=None,
-                        parse_json_result=True):
+                        parse_json_result=True, immutable_ids=False):
         """
         Run the http request and returns the json data upon success.
 
@@ -69,6 +69,10 @@ class BaseService(object):
 
         if headers:
             default_headers.update(headers)
+        if immutable_ids:
+            prefer_headers = default_headers['Prefer'].split(',') if 'Prefer' in default_headers else []
+            prefer_headers.append('IdType="ImmutableId"')
+            default_headers |= { 'Prefer': ','.join(prefer_headers) }
 
         logger.info('{}: {}'.format(method.upper(), full_url))
         retries = RETRIES_COUNT
@@ -265,6 +269,31 @@ class UserService(BaseService):
         resp = self.execute_request(method, path)
         return resp
 
+    def translate_exchange_ids(self, input_ids: List[str], source_type: str, target_type: str) -> Dict[str, str]:
+        """
+        Translate identifiers of Outlook-related resources to different formats.
+        https://learn.microsoft.com/en-us/graph/api/user-translateexchangeids
+
+        Possible identifiers formats:
+        entryId - The binary entry ID format used by MAPI clients.
+        ewsId - The ID format used by Exchange Web Services clients.
+        immutableEntryId - The binary MAPI-compatible immutable ID format.
+        restId - The default ID format used by Microsoft Graph.
+        restImmutableEntryId - The immutable ID format used by Microsoft Graph.
+
+        Returns a dictionary in format:
+        {'sourceId': 'targetId'}
+        """
+        path = 'translateExchangeIds'
+        method = 'post'
+        body = json.dumps({
+            'inputIds' : input_ids,
+            'sourceIdType':source_type,
+            'targetIdType': target_type
+            })
+        resp = self.execute_request(method, path, body=body)
+        return {i['sourceId']: i['targetId'] for i in (resp or {}).get('value', [])}
+
 
 class CalendarService(BaseService):
     def list(self, _filter='', max_entries=DEFAULT_MAX_ENTRIES):
@@ -443,7 +472,7 @@ class MessageService(BaseService):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages ."""
         if format not in self.supported_response_formats:
             raise ValueError(format)
-        
+
         if format == RESPONSE_FORMAT_ODATA:
             path = '/messages/{}'.format(message_id)
         elif format == RESPONSE_FORMAT_RAW:
@@ -636,7 +665,7 @@ class MailFolderService(BaseService):
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
-    def delta_list(self, folder_id, delta_token=None, _filter=None, max_entries=DEFAULT_MAX_ENTRIES, fields=[]):
+    def delta_list(self, folder_id, delta_token=None, _filter=None, max_entries=DEFAULT_MAX_ENTRIES, fields=[], immutable_ids=False):
         """
         Support tracking of changes in the mailFolders.
 
@@ -659,7 +688,7 @@ class MailFolderService(BaseService):
             query_params.update({'$select': ','.join(fields)})
 
         resp = self.execute_request(
-            method, path, query_params=query_params, headers=headers)
+            method, path, query_params=query_params, headers=headers, immutable_ids=immutable_ids)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
