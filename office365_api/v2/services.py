@@ -292,7 +292,10 @@ class UserService(BaseService):
             'targetIdType': target_type
             })
         resp = self.execute_request(method, path, body=body)
-        return {i['sourceId']: i['targetId'] for i in (resp or {}).get('value', [])}
+        try:
+            return {i['sourceId']: i['targetId'] for i in (resp or {}).get('value', [])}
+        except Exception as ex:
+            raise Exception(f'>Permanent response [{json.dumps(resp)}]') from ex
 
 
 class CalendarService(BaseService):
