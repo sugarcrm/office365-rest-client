@@ -5,11 +5,13 @@ import json
 class Office365ClientError(Exception):
 
     def __init__(self, status_code, data):
-        super(Office365ClientError, self).__init__('{}: {}: {}'.format(
-            status_code, data['error']['code'], data['error']['message']))
         self.status_code = status_code
-        self.error_code = data['error']['code']
-        self.error_message = data['error']['message']
+        self.error_code = data.get('error', {}).get('code', '')
+        self.error_message = data.get('error', {}).get('message', '')
+        super(Office365ClientError, self).__init__('{}: {}: {}'.format(
+            status_code,
+            self.error_code,
+            self.error_message))
 
     @property
     def is_invalid_tokens(self):
@@ -20,7 +22,7 @@ class Office365ClientError(Exception):
     def is_invalid_session(self):
         # Need to use refresh_token
         return self.status_code == 401
-    
+
     @property
     def is_forbidden(self):
         return self.status_code == 403
@@ -39,7 +41,7 @@ class Office365ClientError(Exception):
 
 
 class Office365ServerError(Exception):
-    
+
     def __init__(self, status_code, body):
         super(Office365ServerError, self).__init__(
             '{}: {}'.format(status_code, body))
