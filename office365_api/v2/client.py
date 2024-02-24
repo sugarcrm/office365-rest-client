@@ -10,7 +10,7 @@ pyopenssl.inject_into_urllib3()
 class MicrosoftGraphClient(object):
     def __init__(self, credentials):
         self.credentials = credentials
-        self.http = httplib2.Http(tls_minimum_version=TLSVersion.TLSv1_3, tls_maximum_version=TLSVersion.TLSv1_3)
+        self.http = httplib2.Http(tls_minimum_version=TLSVersion.TLSv1_2, tls_maximum_version=TLSVersion.TLSv1_2)
         self.credentials.authorize(self.http)
 
         self.users = UserServicesFactory(self)
