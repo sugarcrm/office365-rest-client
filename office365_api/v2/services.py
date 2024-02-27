@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+from ssl import SSLEOFError
 from typing import Any, Dict, List, Tuple
 import urllib.request
 import urllib.parse
@@ -22,7 +23,7 @@ class BaseService(object):
     base_url = 'https://graph.microsoft.com'
     graph_api_version = 'v1.0'
     supported_response_formats = [RESPONSE_FORMAT_ODATA, RESPONSE_FORMAT_RAW]
-     
+
 
     def __init__(self, client, prefix):
         self.client = client
@@ -80,7 +81,7 @@ class BaseService(object):
                                                                body=body,
                                                                headers=default_headers)
                 break
-            except ConnectionResetError:
+            except (ConnectionResetError, SSLEOFError):
                 retries -= 1
                 if retries == 0:
                     raise
@@ -443,7 +444,7 @@ class MessageService(BaseService):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages ."""
         if format not in self.supported_response_formats:
             raise ValueError(format)
-        
+
         if format == RESPONSE_FORMAT_ODATA:
             path = '/messages/{}'.format(message_id)
         elif format == RESPONSE_FORMAT_RAW:
