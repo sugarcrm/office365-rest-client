@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
-from ssl import SSLEOFError
 from typing import Any, Dict, List, Tuple
 import urllib.request
 import urllib.parse
@@ -81,7 +80,7 @@ class BaseService(object):
                                                                body=body,
                                                                headers=default_headers)
                 break
-            except (ConnectionResetError, SSLEOFError):
+            except ConnectionResetError:
                 retries -= 1
                 if retries == 0:
                     raise
@@ -558,7 +557,7 @@ class ContactFolderService(BaseService):
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
-    def delta_list(self, folder_id: str = 'contacts', fields: List[str] = [], delta_token: str = None) -> Tuple[Dict[str, Any], str]:
+    def delta_list(self, folder_id: str = 'contacts', fields: List[str] = [], delta_token: str = None, max_entries=DEFAULT_MAX_ENTRIES) -> Tuple[Dict[str, Any], str]:
         path = f"/contactFolders('{folder_id}')/contacts/delta"
         method = 'get'
         query_params = None
@@ -570,7 +569,10 @@ class ContactFolderService(BaseService):
             query_params = {
                 '$select': ','.join(fields)
             }
-        resp = self.execute_request(method, path, query_params=query_params)
+        headers = {
+            'Prefer': 'odata.maxpagesize=%d' % max_entries
+        }
+        resp = self.execute_request(method, path, query_params=query_params, headers=headers)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
