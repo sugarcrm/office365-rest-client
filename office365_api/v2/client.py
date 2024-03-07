@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
-import httplib2
-from ssl import TLSVersion
-from urllib3.contrib import pyopenssl
+import requests
 
-from .services import UserServicesFactory, SubscriptionFactory, BatchService
+from .services import BatchService, SubscriptionFactory, UserServicesFactory
 
-pyopenssl.inject_into_urllib3()
 
 class MicrosoftGraphClient(object):
     def __init__(self, credentials):
         self.credentials = credentials
-        self.http = httplib2.Http()
-        self.credentials.authorize(self.http)
+        self.http = None # backward compatibility
+        self.session = requests.Session()        
+        self.credentials.apply(self.session.headers)
 
         self.users = UserServicesFactory(self)
         self.me = self.users('me')
