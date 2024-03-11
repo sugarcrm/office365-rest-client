@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-from setuptools import setup, find_packages
-
+from setuptools import find_packages, setup
 
 setup(name='office365-rest-client',
-      version='3.2.2',
-      description='Python api wrapper for Office365 API v3.2.2',
+      version='3.3.0',
+      description='Python api wrapper for Office365 API v3.3.0',
       author='SugarCRM',
       packages=find_packages(),
       install_requires=[
-          'oauth2client>=4.0.0'
+          'oauth2client>=4.0.0',
+          'requests>=2.31.0',
       ],
       zip_safe=False)

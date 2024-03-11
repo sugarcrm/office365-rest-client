@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
-import httplib2
-from .services import UserServicesFactory, SubscriptionFactory, BatchService
+import requests
+
+from .services import BatchService, SubscriptionFactory, UserServicesFactory
 
 
 class MicrosoftGraphClient(object):
     def __init__(self, credentials):
         self.credentials = credentials
-        self.http = httplib2.Http()
-        self.credentials.authorize(self.http)
+        self.http = None # backward compatibility
+        self.session = requests.Session()        
+        self.credentials.apply(self.session.headers)
 
         self.users = UserServicesFactory(self)
         self.me = self.users('me')

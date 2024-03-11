@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
-from typing import Any, Dict, List, Tuple
-import urllib.request
-import urllib.parse
 import urllib.error
+import urllib.parse
+import urllib.request
+from typing import Any, Dict, List, Tuple
 
-import oauth2client.transport
+from requests.exceptions import ChunkedEncodingError
+from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from .exceptions import Office365ClientError, Office365ServerError
 
@@ -22,7 +23,7 @@ class BaseService(object):
     base_url = 'https://graph.microsoft.com'
     graph_api_version = 'v1.0'
     supported_response_formats = [RESPONSE_FORMAT_ODATA, RESPONSE_FORMAT_RAW]
-     
+
 
     def __init__(self, client, prefix):
         self.client = client
@@ -47,7 +48,7 @@ class BaseService(object):
         return resp, next_link
 
     def execute_request(self, method, path, query_params=None, headers=None, body=None,
-                        parse_json_result=True):
+                        parse_json_result=True, set_content_type=True):
         """
         Run the http request and returns the json data upon success.
 
@@ -61,11 +62,14 @@ class BaseService(object):
             querystring = urllib.parse.urlencode(query_params)
             full_url += '?' + querystring
 
-        default_headers = {
-            'Content-Type': 'application/json'
-        } if parse_json_result else {
-            'Content-Type': 'text/html'
-        }
+        if set_content_type:
+            default_headers = {
+                'Content-Type': 'application/json'
+            } if parse_json_result else {
+                'Content-Type': 'text/html'
+            }
+        else:
+            default_headers = {}
 
         if headers:
             default_headers.update(headers)
@@ -74,28 +78,27 @@ class BaseService(object):
         retries = RETRIES_COUNT
         while True:
             try:
-                resp, content = oauth2client.transport.request(self.client.http,
-                                                               full_url,
-                                                               method=method.upper(),
-                                                               body=body,
-                                                               headers=default_headers)
+                resp = self.client.session.request(url=full_url, method=method.upper(), data=body, headers=default_headers)
                 break
-            except ConnectionResetError:
+            except (
+                ConnectionResetError, 
+                # requests lib re-raises ConnectionResetError exception as one of below
+                RequestsConnectionError, 
+                ChunkedEncodingError, ):
                 retries -= 1
                 if retries == 0:
                     raise
 
-        if resp.status < 300:
-            if content:
-                return json.loads(content) if parse_json_result else content
-        elif resp.status < 500:
+        if resp.status_code < 300:
+            return resp.json() if parse_json_result else resp.content
+        elif resp.status_code < 500:
             try:
-                error_data = json.loads(content)
+                error_data = resp.json()
             except ValueError:
-                error_data = {'error': {'message': content, 'code': 'uknown'}}
-            raise Office365ClientError(resp.status, error_data)
+                error_data = {'error': {'message': resp.content, 'code': 'uknown'}}
+            raise Office365ClientError(resp.status_code, error_data)
         else:
-            raise Office365ServerError(resp.status, content)
+            raise Office365ServerError(resp.status_code, resp.content)
 
 
 class ServicesCollection(object):
@@ -177,23 +180,21 @@ class BatchService(BaseService):
 
         logger.info('{}: {} with {}x requests'.format(
             method, self.batch_uri, len(requests)))
-        resp, content = oauth2client.transport.request(self.client.http,
-                                                       self.batch_uri,
-                                                       method=method,
-                                                       body=json.dumps(
-                                                           {'requests': requests}),
-                                                       headers=default_headers)
-        if resp.status < 300:
-            if content:
-                return json.loads(content)
-        elif resp.status < 500:
+        resp = self.client.session.request(
+            url=self.batch_uri,
+            method=method,
+            json={'requests': requests},
+            headers=default_headers)
+        if resp.status_code < 300:            
+            return resp.json()
+        elif resp.status_code < 500:
             try:
-                error_data = json.loads(content)
+                error_data = resp.json()
             except ValueError:
-                error_data = {'error': {'message': content, 'code': 'unknown'}}
-            raise Office365ClientError(resp.status, error_data)
+                error_data = {'error': {'message': resp.content, 'code': 'unknown'}}
+            raise Office365ClientError(resp.status_code, error_data)
         else:
-            raise Office365ServerError(resp.status, content)
+            raise Office365ServerError(resp.status_code, resp.content)
 
     def execute(self):
         requests = []
@@ -443,7 +444,7 @@ class MessageService(BaseService):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_messages ."""
         if format not in self.supported_response_formats:
             raise ValueError(format)
-        
+
         if format == RESPONSE_FORMAT_ODATA:
             path = '/messages/{}'.format(message_id)
         elif format == RESPONSE_FORMAT_RAW:
@@ -464,23 +465,10 @@ class MessageService(BaseService):
     def send(self, message_id, **kwargs):
         """https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/api/message_send ."""
         path = '/messages/{}/send'.format(message_id)
+        method = 'post'
         # this request fails if Content-Type header is set
         # to work around this, we don't use self.execute_request()
-        resp, content = oauth2client.transport.request(self.client.http,
-                                                       self.build_url(path),
-                                                       method='POST',
-                                                       headers={'Content-Length': 0})
-        if resp.status < 300:
-            if content:
-                return json.loads(content)
-        elif resp.status < 500:
-            try:
-                error_data = json.loads(content)
-            except ValueError:
-                error_data = {'error': {'message': content, 'code': 'uknown'}}
-            raise Office365ClientError(resp.status, error_data)
-        else:
-            raise Office365ServerError(resp.status, content)
+        return self.execute_request(method, path, headers={'Content-Length': '0'}, set_content_type=False, parse_json_result=False)
 
     def update(self, message_id, **kwargs):
         path = '/messages/{}'.format(message_id)
@@ -557,7 +545,7 @@ class ContactFolderService(BaseService):
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
-    def delta_list(self, folder_id: str = 'contacts', fields: List[str] = [], delta_token: str = None) -> Tuple[Dict[str, Any], str]:
+    def delta_list(self, folder_id: str = 'contacts', fields: List[str] = [], delta_token: str = None, max_entries=DEFAULT_MAX_ENTRIES) -> Tuple[Dict[str, Any], str]:
         path = f"/contactFolders('{folder_id}')/contacts/delta"
         method = 'get'
         query_params = None
@@ -569,7 +557,10 @@ class ContactFolderService(BaseService):
             query_params = {
                 '$select': ','.join(fields)
             }
-        resp = self.execute_request(method, path, query_params=query_params)
+        headers = {
+            'Prefer': 'odata.maxpagesize=%d' % max_entries
+        }
+        resp = self.execute_request(method, path, query_params=query_params, headers=headers)
         next_link = resp.get('@odata.nextLink')
         return resp, next_link
 
