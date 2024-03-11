@@ -468,7 +468,7 @@ class MessageService(BaseService):
         method = 'post'
         # this request fails if Content-Type header is set
         # to work around this, we don't use self.execute_request()
-        return self.execute_request(method, path, headers={'Content-Length': 0}, set_content_type=False)
+        return self.execute_request(method, path, headers={'Content-Length': '0'}, set_content_type=False, parse_json_result=False)
 
     def update(self, message_id, **kwargs):
         path = '/messages/{}'.format(message_id)
