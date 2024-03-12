@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Tuple
 
 from requests.exceptions import ChunkedEncodingError
 from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import JSONDecodeError as RequestsJSONDecodeError
 
 from .exceptions import Office365ClientError, Office365ServerError
 
@@ -90,11 +91,17 @@ class BaseService(object):
                     raise
 
         if resp.status_code < 300:
-            return resp.json() if parse_json_result else resp.content
+            if parse_json_result:
+                try:
+                    return resp.json()  
+                except RequestsJSONDecodeError:
+                    return resp.content
+            else:
+                return resp.content
         elif resp.status_code < 500:
             try:
                 error_data = resp.json()
-            except ValueError:
+            except (ValueError, RequestsJSONDecodeError):
                 error_data = {'error': {'message': resp.content, 'code': 'uknown'}}
             raise Office365ClientError(resp.status_code, error_data)
         else:
@@ -190,7 +197,7 @@ class BatchService(BaseService):
         elif resp.status_code < 500:
             try:
                 error_data = resp.json()
-            except ValueError:
+            except (ValueError, RequestsJSONDecodeError):
                 error_data = {'error': {'message': resp.content, 'code': 'unknown'}}
             raise Office365ClientError(resp.status_code, error_data)
         else:
