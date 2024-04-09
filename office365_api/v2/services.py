@@ -182,6 +182,8 @@ class BatchService(BaseService):
         self._order.append(request_id)
 
     def _execute(self, requests):
+        if self.is_empty:
+            raise Office365ClientError('No requests to execute in a batch')
         method = 'POST'
         default_headers = {'Content-Type': 'application/json'}
 
@@ -231,6 +233,10 @@ class BatchService(BaseService):
 
             if callback is not None:
                 callback(request_id, response['body'], exception)
+
+    @property
+    def is_empty(self) -> bool:
+        return not self._order
 
 
 class SubscriptionService(BaseService):
