@@ -20,11 +20,11 @@ RETRIES_COUNT = 2
 RESPONSE_FORMAT_ODATA = 'odata'
 RESPONSE_FORMAT_RAW = 'raw'
 
+
 class BaseService(object):
     base_url = 'https://graph.microsoft.com'
     graph_api_version = 'v1.0'
     supported_response_formats = [RESPONSE_FORMAT_ODATA, RESPONSE_FORMAT_RAW]
-
 
     def __init__(self, client, prefix):
         self.client = client
@@ -82,10 +82,10 @@ class BaseService(object):
                 resp = self.client.session.request(url=full_url, method=method.upper(), data=body, headers=default_headers)
                 break
             except (
-                ConnectionResetError, 
+                ConnectionResetError,
                 # requests lib re-raises ConnectionResetError exception as one of below
-                RequestsConnectionError, 
-                ChunkedEncodingError, ):
+                RequestsConnectionError,
+                    ChunkedEncodingError, ):
                 retries -= 1
                 if retries == 0:
                     raise
@@ -93,7 +93,7 @@ class BaseService(object):
         if resp.status_code < 300:
             if parse_json_result:
                 try:
-                    return resp.json()  
+                    return resp.json()
                 except RequestsJSONDecodeError:
                     return resp.content
             else:
@@ -108,6 +108,10 @@ class BaseService(object):
             raise Office365ServerError(resp.status_code, resp.content)
 
 
+class BaseBetaService(BaseService):
+    graph_api_version = 'beta'
+
+
 class ServicesCollection(object):
     """Wrap a collection of services in a context."""
 
@@ -117,6 +121,7 @@ class ServicesCollection(object):
         self.calendar = CalendarService(self.client, self.prefix)
         self.calendarview = CalendarViewService(self.client, self.prefix)
         self.event = EventService(self.client, self.prefix)
+        self.event_beta = EventServiceBeta(self.client, self.prefix)
         self.message = MessageService(self.client, self.prefix)
         self.attachment = AttachmentService(self.client, self.prefix)
         self.contactfolder = ContactFolderService(self.client, self.prefix)
@@ -194,7 +199,7 @@ class BatchService(BaseService):
             method=method,
             json={'requests': requests},
             headers=default_headers)
-        if resp.status_code < 300:            
+        if resp.status_code < 300:
             return resp.json()
         elif resp.status_code < 500:
             try:
@@ -381,6 +386,16 @@ class EventService(BaseService):
         return self.execute_request(method, path)
 
 
+class EventServiceBeta(BaseBetaService):
+    def get(self, event_id, params=None, path=None):
+        if not path:
+            path = '/events/'
+        path += event_id
+
+        method = 'get'
+        return self.execute_request(method, path, query_params=params)
+
+
 class CalendarViewService(BaseService):
     def list(self, start_datetime, end_datetime, max_entries=DEFAULT_MAX_ENTRIES, _filter='', calendar_id=None):
         """https://graph.microsoft.io/en-us/docs/api-reference/v1.0/api/user_list_calendarview."""
@@ -558,7 +573,8 @@ class ContactFolderService(BaseService):
         body = json.dumps(kwargs)
         return self.execute_request(method, path, body=body)
 
-    def delta_list(self, folder_id: str = 'contacts', fields: List[str] = [], delta_token: str = None, max_entries=DEFAULT_MAX_ENTRIES) -> Tuple[Dict[str, Any], str]:
+    def delta_list(self, folder_id: str = 'contacts', fields: List[str] = [
+    ], delta_token: str = None, max_entries=DEFAULT_MAX_ENTRIES) -> Tuple[Dict[str, Any], str]:
         path = f"/contactFolders('{folder_id}')/contacts/delta"
         method = 'get'
         query_params = None
