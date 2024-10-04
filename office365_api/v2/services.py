@@ -231,7 +231,7 @@ class BatchService(BaseService):
             exception = None
             try:
                 if response['status'] >= 300:
-                    error_data = response['body']
+                    error_data = response.get('body')
                     raise Office365ClientError(response['status'], error_data)
             except Office365ClientError as e:
                 exception = e
