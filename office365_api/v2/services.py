@@ -113,11 +113,16 @@ class BaseBetaService(BaseService):
 
 
 class ServicesCollection(object):
-    """Wrap a collection of services in a context."""
-
     def __init__(self, client, prefix):
         self.client = client
         self.prefix = prefix
+
+
+class UserServicesCollection(ServicesCollection):
+    """Wrap a collection of services in a context."""
+
+    def __init__(self, client, prefix):
+        super().__init__(client, prefix)
         self.calendar = CalendarService(self.client, self.prefix)
         self.calendarview = CalendarViewService(self.client, self.prefix)
         self.event = EventService(self.client, self.prefix)
@@ -129,6 +134,14 @@ class ServicesCollection(object):
         self.mailfolder = MailFolderService(self.client, self.prefix)
         self.user = UserService(self.client, self.prefix)
         self.mailboxSettings = MailboxSettingsService(self.client, self.prefix)
+        self.outlook = OutlookServicesCollection(self.client, self.prefix)
+
+
+class OutlookServicesCollection(ServicesCollection):
+    """Wrap a collection of services grouped by 'outlook' context."""
+    def __init__(self, client, prefix):
+        super().__init__(client, prefix + '/outlook')
+        self.masterCategories = MasterCategoriesService(self.client, self.prefix)
 
 
 class BaseFactory(object):
@@ -272,9 +285,9 @@ class UserServicesFactory(BaseFactory):
         self.user_id = user_id
         if user_id == 'me':
             # special case for 'me'
-            return ServicesCollection(self.client, 'me')
+            return UserServicesCollection(self.client, 'me')
         else:
-            return ServicesCollection(self.client, 'users/' + user_id)
+            return UserServicesCollection(self.client, 'users/' + user_id)
 
 
 class UserService(BaseService):
@@ -710,3 +723,35 @@ class MailboxSettingsService(BaseService):
         method = 'get'
         resp = self.execute_request(method, path)
         return resp
+
+
+class MasterCategoriesService(BaseService):
+    def list(self, max_entries=DEFAULT_MAX_ENTRIES):
+        path = '/masterCategories'
+        method = 'get'
+        query_params = {'$top': max_entries}
+        resp = self.execute_request(method, path, query_params=query_params)
+        next_link = resp.get('@odata.nextLink')
+        return resp, next_link
+
+    def create(self, **kwargs):
+        path = '/masterCategories'
+        method = 'post'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
+
+    def get(self, category_id):
+        path = '/masterCategories/' + category_id
+        method = 'get'
+        return self.execute_request(method, path)
+
+    def update(self, category_id, **kwargs):
+        path = '/masterCategories/' + category_id
+        method = 'patch'
+        body = json.dumps(kwargs)
+        return self.execute_request(method, path, body=body)
+
+    def delete(self, category_id):
+        path = '/masterCategories/' + category_id
+        method = 'delete'
+        return self.execute_request(method, path)
