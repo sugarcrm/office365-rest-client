@@ -3,12 +3,8 @@ import json
 import logging
 import urllib.parse
 
-import oauth2client.transport
-
-from .exceptions import Office365ClientError
-from .exceptions import Office365ServerError
+from .exceptions import Office365ClientError, Office365ServerError
 from .filters import BaseFilter
-
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +43,11 @@ class BaseAPIService(BaseService):
             result.extend(response['value'])
             next_link = response.get('@odata.nextLink')
             delta_link = response.get('@odata.deltaLink', '')
-            delta_link_qs = urllib.parse.parse_qs(urllib.parse.urlparse(delta_link).query)
+            delta_link_qs = urllib.parse.parse_qs(
+                urllib.parse.urlparse(delta_link).query)
             if not next_link and (delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')):
-                delta_token_qs = delta_link_qs.get('$deltaToken') or delta_link_qs.get('$deltatoken')
+                delta_token_qs = delta_link_qs.get(
+                    '$deltaToken') or delta_link_qs.get('$deltatoken')
                 delta_token = delta_token_qs[0] if delta_token_qs else ''
 
         return result, delta_token
@@ -59,10 +57,8 @@ class BaseAPIService(BaseService):
         Try API request; if access_token is expired, request a new one
         """
         logger.info('{}: {}'.format(method.upper(), url))
-        resp, content = oauth2client.transport.request(self.client.http, url,
-                                                       method=method.upper(),
-                                                       body=body,
-                                                       headers=headers)
+        resp, content = self.client.http.request(
+            url, method=method.upper(), body=body, headers=headers)
         if resp.status == 200:
             return json.loads(content)
         else:
