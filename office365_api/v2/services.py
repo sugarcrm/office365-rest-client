@@ -6,6 +6,7 @@ import urllib.parse
 import urllib.request
 from typing import Any, Dict, List, Tuple
 
+from requests import HTTPError
 from requests.exceptions import ChunkedEncodingError
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import JSONDecodeError as RequestsJSONDecodeError
@@ -79,8 +80,27 @@ class BaseService(object):
         retries = RETRIES_COUNT
         while True:
             try:
-                resp = self.client.session.request(url=full_url, method=method.upper(), data=body, headers=default_headers)
-                break
+                resp = self.client.session.request(
+                    url=full_url, method=method.upper(), data=body, headers=default_headers)
+                if parse_json_result:
+                    try:
+                        return resp.json()
+                    except RequestsJSONDecodeError:
+                        return resp.content
+                else:
+                    return resp.content
+            except HTTPError as e:
+                if e.response.status_code < 500:
+                    try:
+                        error_data = e.response.json()
+                    except (ValueError, RequestsJSONDecodeError):
+                        error_data = {
+                            'error': {'message': e.response.content, 'code': 'uknown'}}
+                    raise Office365ClientError(
+                        e.response.status_code, error_data)
+                else:
+                    raise Office365ServerError(
+                        e.response.status_code, e.response.content)
             except (
                 ConnectionResetError,
                 # requests lib re-raises ConnectionResetError exception as one of below
@@ -89,23 +109,6 @@ class BaseService(object):
                 retries -= 1
                 if retries == 0:
                     raise
-
-        if resp.status_code < 300:
-            if parse_json_result:
-                try:
-                    return resp.json()
-                except RequestsJSONDecodeError:
-                    return resp.content
-            else:
-                return resp.content
-        elif resp.status_code < 500:
-            try:
-                error_data = resp.json()
-            except (ValueError, RequestsJSONDecodeError):
-                error_data = {'error': {'message': resp.content, 'code': 'uknown'}}
-            raise Office365ClientError(resp.status_code, error_data)
-        else:
-            raise Office365ServerError(resp.status_code, resp.content)
 
 
 class BaseBetaService(BaseService):
@@ -207,21 +210,24 @@ class BatchService(BaseService):
 
         logger.info('{}: {} with {}x requests'.format(
             method, self.batch_uri, len(requests)))
-        resp = self.client.session.request(
-            url=self.batch_uri,
-            method=method,
-            json={'requests': requests},
-            headers=default_headers)
-        if resp.status_code < 300:
+        try:
+            resp = self.client.session.request(
+                url=self.batch_uri,
+                method=method,
+                json={'requests': requests},
+                headers=default_headers)
             return resp.json()
-        elif resp.status_code < 500:
-            try:
-                error_data = resp.json()
-            except (ValueError, RequestsJSONDecodeError):
-                error_data = {'error': {'message': resp.content, 'code': 'unknown'}}
-            raise Office365ClientError(resp.status_code, error_data)
-        else:
-            raise Office365ServerError(resp.status_code, resp.content)
+        except HTTPError as e:
+            if e.response.status_code < 500:
+                try:
+                    error_data = e.response.json()
+                except (ValueError, RequestsJSONDecodeError):
+                    error_data = {
+                        'error': {'message': e.response.content, 'code': 'unknown'}}
+                raise Office365ClientError(e.response.status_code, error_data)
+            else:
+                raise Office365ServerError(
+                    e.response.status_code, e.response.content)
 
     def execute(self):
         requests = []
