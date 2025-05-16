@@ -158,11 +158,11 @@ class SubscriptionFactory(BaseFactory):
 
 
 class BatchService(BaseService):
-    def __init__(self, client, batch_uri=None):
+    def __init__(self, client, beta=True):
         self.client = client
 
-        if not batch_uri:
-            self.batch_uri = 'https://graph.microsoft.com/beta/$batch'
+        channel = 'beta' if beta else 'v1.0'
+        self.batch_uri = f'https://graph.microsoft.com/{channel}/$batch'
 
         self._callbacks = {}
 
