@@ -4,6 +4,7 @@ from .base_beta import BaseBetaService
 from .batch import BatchService
 from .calendar import CalendarService
 from .calendar_view import CalendarViewService
+from .chat import ChatService
 from .contact import ContactService
 from .contact_folder import ContactFolderService
 from .event import EventService
@@ -25,6 +26,7 @@ __all__ = [
     "BatchService",
     "CalendarService",
     "CalendarViewService",
+    "ChatService",
     "ContactService",
     "ContactFolderService",
     "EventService",
