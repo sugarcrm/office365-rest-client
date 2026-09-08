@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
+from .factories.copilot_ai_insights_factory import CopilotAiInsightsFactory
 from .factories.user_factory import UserServicesFactory
 from .services import BatchService, ChatService, SubscriptionService
 
@@ -14,6 +15,7 @@ class MicrosoftGraphClient(object):
         self.me = self.users('me')
         self.subscription = SubscriptionService(self, '')
         self.chats = ChatService(self, '')
+        self.copilot_ai_insights = CopilotAiInsightsFactory(self)
 
     def new_batch_request(self, beta=True):
         return BatchService(client=self, beta=beta)

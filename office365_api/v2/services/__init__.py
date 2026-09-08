@@ -1,3 +1,4 @@
+from .ai_insight import AiInsightService
 from .attachment import AttachmentService
 from .base import BaseService
 from .base_beta import BaseBetaService
@@ -20,6 +21,7 @@ from .subscription import SubscriptionService
 from .user import UserService
 
 __all__ = [
+    "AiInsightService",
     "AttachmentService",
     "BaseService",
     "BaseBetaService",
